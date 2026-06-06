@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Finger Trainer">
+<meta name="theme-color" content="#0e1116">
+<title>Finger Independence</title>
+<style>
+  :root{
+    --bg:#0e1116; --panel:#171c24; --panel2:#1f2630;
+    --line:#2a323d; --text:#e7edf5; --muted:#8b97a7;
+    --accent:#ffb33a; --accent2:#3ad6ff; --on:#2bd47d;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0; height:100%;}
+  body{
+    background:var(--bg); color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;
+    display:flex; flex-direction:column;
+    position:fixed; top:0; right:0; bottom:0; left:0;
+    padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+    overflow:hidden; user-select:none; -webkit-user-select:none;
+  }
+  header{
+    text-align:center; padding:14px 16px 6px;
+  }
+  header h1{margin:0; font-size:19px; font-weight:800; letter-spacing:.3px;}
+  header p{margin:2px 0 0; font-size:12px; color:var(--muted); font-weight:600;}
+
+  .screen{flex:1; min-height:0; overflow-y:auto; -webkit-overflow-scrolling:touch; padding:8px 16px 16px;}
+  .hidden{display:none !important;}
+
+  .section-title{font-size:12px; color:var(--muted); font-weight:700; text-transform:uppercase;
+    letter-spacing:.6px; margin:28px 4px 8px;}
+
+  /* pattern grid */
+  .grid{display:grid; grid-template-columns:repeat(4,1fr); gap:7px;}
+  .pat{
+    background:var(--panel); border:1.5px solid var(--line); color:var(--text);
+    border-radius:11px; padding:11px 4px; font-size:14px; font-weight:700;
+    font-variant-numeric:tabular-nums; letter-spacing:.5px; text-align:center;
+    transition:.12s; cursor:pointer;
+  }
+  .pat.sel{background:rgba(255,179,58,.16); border-color:var(--accent); color:var(--accent);}
+
+  /* column select header */
+  .colhead{margin-bottom:7px;}
+  .colhead button{background:var(--panel2); border:1.5px solid var(--line); color:var(--muted);
+    border-radius:11px 11px 5px 5px; padding:9px 4px 7px; font-size:14px; font-weight:800; cursor:pointer;
+    line-height:1.15;}
+  .colhead button small{display:block; font-size:9px; font-weight:700; letter-spacing:.3px; opacity:.8;}
+  .colhead button.sel{background:rgba(58,214,255,.16); border-color:var(--accent2); color:var(--accent2);}
+
+  .row-actions{display:flex; gap:8px; margin-top:10px;}
+  .row-actions button{
+    flex:1; background:var(--panel2); border:1px solid var(--line); color:var(--muted);
+    border-radius:10px; padding:9px; font-size:12.5px; font-weight:700; cursor:pointer;
+  }
+  .row-actions button.on{background:rgba(43,212,125,.15); border-color:var(--on); color:var(--on);}
+
+  /* controls */
+  .ctrl{background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:14px 16px; margin-top:8px;}
+  .ctrl .label{display:flex; justify-content:center; align-items:center; margin-bottom:8px;}
+  .bpmval{font-size:13px; font-weight:700; color:var(--accent); font-variant-numeric:tabular-nums;}
+  .bpmval small{font-size:13px; color:var(--accent); font-weight:700; margin-left:3px;}
+  input[type=range]{width:100%; -webkit-appearance:none; height:6px; border-radius:3px;
+    background:linear-gradient(90deg,#3ad6ff,#ffe14d,#ff5466); margin:6px 0;}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none; width:26px; height:26px;
+    border-radius:50%; background:#fff; box-shadow:0 2px 6px rgba(0,0,0,.5);}
+  .stepper{display:flex; align-items:center; gap:10px; margin-top:8px;}
+  .stepper button{width:46px; height:46px; border-radius:12px; border:1px solid var(--line);
+    background:var(--panel2); color:var(--text); font-size:22px; font-weight:700; cursor:pointer;}
+  .stepper .tap{flex:1; height:46px; font-size:13px; font-weight:700; color:var(--accent2);}
+
+  .reps{display:flex; gap:8px;}
+  .reps button{flex:1; padding:11px 0; border-radius:10px; border:1px solid var(--line);
+    background:var(--panel2); color:var(--muted); font-size:15px; font-weight:700; cursor:pointer;}
+  .reps button.sel{background:rgba(58,214,255,.15); border-color:var(--accent2); color:var(--accent2);}
+
+  /* footer start */
+  .footer{padding:10px 16px; border-top:1px solid var(--line); background:var(--bg);}
+  .bigbtn{width:100%; padding:17px; border:none; border-radius:15px; font-size:18px; font-weight:800;
+    color:#0e1116; background:var(--on); cursor:pointer; letter-spacing:.3px;}
+  .bigbtn.stop{background:#ff5466; color:#fff;}
+  .bigbtn:disabled{opacity:.4;}
+
+  /* PLAY screen */
+  #play{display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; height:100%;}
+  .digits{display:flex; gap:14px; margin:18px 0 22px;}
+  .dig{
+    width:62px; height:62px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+    font-size:30px; font-weight:800; background:var(--panel); border:2px solid var(--line);
+    color:var(--muted); transition:transform .05s, background .05s, color .05s, border-color .05s;
+  }
+  .dig.active{background:var(--accent); color:#0e1116; border-color:var(--accent);
+    transform:scale(1.16); box-shadow:0 0 26px rgba(255,179,58,.6);}
+  .dig.first.active{background:var(--accent2); border-color:var(--accent2); box-shadow:0 0 26px rgba(58,214,255,.6);}
+  .beats{display:flex; gap:9px; margin-bottom:8px;}
+  .beats i{width:9px; height:9px; border-radius:50%; background:var(--line);}
+  .beats i.on{background:var(--accent);}
+  .playbpm{font-size:15px; color:var(--muted); font-weight:700; margin:10px 0 0;}
+  .queue{font-size:12px; color:var(--muted); margin-top:4px;}
+  .flash{position:fixed; inset:0; background:var(--accent); opacity:0; pointer-events:none;}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Finger Independence</h1>
+  <p>Тренажёр независимости пальцев</p>
+</header>
+
+<!-- ===== SETUP ===== -->
+<div class="screen" id="setup">
+  <div style="height:6px"></div>
+  <div class="grid colhead" id="colhead"></div>
+  <div class="grid" id="grid"></div>
+  <div class="row-actions">
+    <button id="pauseToggle">Пауза между: выкл</button>
+    <button id="selNone">Сбросить</button>
+  </div>
+
+  <div style="height:14px"></div>
+  <div class="ctrl">
+    <div class="label">
+      <span class="bpmval"><span id="bpmNum">80</span><small>BPM</small></span>
+    </div>
+    <input type="range" id="bpm" min="30" max="240" value="80">
+    <div class="stepper">
+      <button id="bpmMinus">–</button>
+      <button class="tap" id="tap">Темп</button>
+      <button id="bpmPlus">+</button>
+    </div>
+  </div>
+
+  <div class="section-title">Повторов каждой аппликатуры</div>
+  <div class="ctrl">
+    <div class="reps" id="reps">
+      <button data-r="1">1</button>
+      <button data-r="2">2</button>
+      <button data-r="6" class="sel">6</button>
+      <button data-r="8">8</button>
+      <button data-r="0">∞</button>
+    </div>
+  </div>
+  <div style="height:8px"></div>
+</div>
+
+<!-- ===== PLAY ===== -->
+<div class="screen hidden" id="play">
+  <div class="beats" id="beats"></div>
+  <div class="digits" id="digits"></div>
+  <div class="playbpm"><span id="playBpm">80</span> BPM</div>
+  <div class="queue" id="queue"></div>
+</div>
+
+<div class="footer">
+  <button class="bigbtn" id="start">▶ Старт</button>
+</div>
+
+<div class="flash" id="flash"></div>
+
+<script>
+"use strict";
+
+/* ---- 24 fingering variations from the chart ---- */
+const PATTERNS = [
+  [1,2,3,4],[2,3,4,1],[3,4,1,2],[4,1,2,3],
+  [1,2,4,3],[2,4,3,1],[3,1,2,4],[4,3,1,2],
+  [1,3,2,4],[2,4,1,3],[3,2,4,1],[4,1,3,2],
+  [1,3,4,2],[2,1,3,4],[3,4,2,1],[4,2,1,3],
+  [1,4,2,3],[2,3,1,4],[3,1,4,2],[4,2,3,1],
+  [1,4,3,2],[2,1,4,3],[3,2,1,4],[4,3,2,1],
+];
+
+const $ = id => document.getElementById(id);
+const fmt = p => p.join("-");
+
+/* ---- state ---- */
+let selected = new Set([0]);          // pattern indices chosen
+let bpm = 80;
+let repeats = 6;                       // 0 = infinite
+let playing = false;
+
+/* ---- build pattern grid ---- */
+const grid = $("grid");
+PATTERNS.forEach((p,i)=>{
+  const b=document.createElement("button");
+  b.className="pat"+(selected.has(i)?" sel":"");
+  b.textContent=fmt(p);
+  b.onclick=()=>{
+    if(selected.has(i)) selected.delete(i); else selected.add(i);
+    b.classList.toggle("sel");
+    updateStart();
+  };
+  grid.appendChild(b);
+});
+function refreshGrid(){
+  [...grid.children].forEach((b,i)=>b.classList.toggle("sel",selected.has(i)));
+  updateStart();
+}
+
+/* ---- column select (each column = indices i where i%4===c) ---- */
+const colhead = $("colhead");
+const colIdx = c => [0,1,2,3,4,5].map(r => c + r*4);   // 6 patterns of column c
+for(let c=0;c<4;c++){
+  const b=document.createElement("button");
+  b.innerHTML = (c+1)+"<small>СТОЛБЕЦ</small>";
+  b.onclick=()=>{
+    const idx=colIdx(c);
+    const allSel=idx.every(i=>selected.has(i));
+    idx.forEach(i=> allSel ? selected.delete(i) : selected.add(i));
+    refreshGrid();
+  };
+  colhead.appendChild(b);
+}
+function updateColHead(){
+  [...colhead.children].forEach((b,c)=>
+    b.classList.toggle("sel", colIdx(c).every(i=>selected.has(i))));
+}
+let pauseEnabled=false;
+$("pauseToggle").onclick=()=>{
+  pauseEnabled=!pauseEnabled;
+  $("pauseToggle").classList.toggle("on",pauseEnabled);
+  $("pauseToggle").textContent="Пауза между: "+(pauseEnabled?"вкл":"выкл");
+};
+$("selNone").onclick=()=>{ selected.clear(); refreshGrid(); };
+
+/* ---- BPM ---- */
+function setBpm(v){
+  bpm=Math.max(30,Math.min(240,Math.round(v)));
+  $("bpm").value=bpm; $("bpmNum").textContent=bpm; $("playBpm").textContent=bpm;
+}
+$("bpm").oninput=e=>setBpm(+e.target.value);
+$("bpmMinus").onclick=()=>setBpm(bpm-1);
+$("bpmPlus").onclick=()=>setBpm(bpm+1);
+
+/* tap tempo */
+let taps=[];
+$("tap").onclick=()=>{
+  const t=performance.now();
+  taps=taps.filter(x=>t-x<2500); taps.push(t);
+  if(taps.length>=2){
+    let sum=0; for(let i=1;i<taps.length;i++) sum+=taps[i]-taps[i-1];
+    setBpm(60000/(sum/(taps.length-1)));
+  }
+};
+
+/* ---- repeats ---- */
+$("reps").querySelectorAll("button").forEach(b=>{
+  b.onclick=()=>{
+    $("reps").querySelectorAll("button").forEach(x=>x.classList.remove("sel"));
+    b.classList.add("sel"); repeats=+b.dataset.r;
+  };
+});
+
+function updateStart(){ $("start").disabled = selected.size===0; updateColHead(); }
+
+/* ================= AUDIO + SCHEDULER ================= */
+let ctx=null;
+function click(time,accent){
+  const o=ctx.createOscillator(), g=ctx.createGain();
+  o.frequency.value=accent?1320:880;
+  o.connect(g); g.connect(ctx.destination);
+  g.gain.setValueAtTime(0.0001,time);
+  g.gain.exponentialRampToValueAtTime(accent?0.9:0.6,time+0.001);
+  g.gain.exponentialRampToValueAtTime(0.0001,time+0.05);
+  o.start(time); o.stop(time+0.06);
+}
+
+let order=[];          // selected pattern indices, in chart order
+let posInOrder=0;      // which pattern of `order`
+let beat=0;            // 0..3 within pattern
+let rep=0;             // repeat count of current pattern
+let phase="play";      // "play" | "pause"
+let pauseBeat=0;       // counter during pause
+const PAUSE_BEATS=4;   // clicks of pause before next pattern (to re-position the hand)
+let nextNoteTime=0;
+let timerId=null;
+const SCHEDULE_AHEAD=0.1, LOOKAHEAD=25;
+let uiQueue=[];
+
+function advance(){
+  nextNoteTime += 60/bpm;             // quarter-note per beat
+  if(phase==="play"){
+    beat++;
+    if(beat>3){
+      beat=0; rep++;
+      if(repeats!==0 && rep>=repeats){
+        rep=0;
+        if(pauseEnabled && order.length>1){ phase="pause"; pauseBeat=0; }  // pause only between different patterns
+        else { posInOrder=(posInOrder+1)%order.length; }                    // no pause -> switch immediately
+      }
+    }
+  }else{ // pause
+    pauseBeat++;
+    if(pauseBeat>=PAUSE_BEATS){
+      phase="play"; posInOrder=(posInOrder+1)%order.length;
+    }
+  }
+}
+
+function scheduler(){
+  if(ctx.state==="running"){
+    // after iOS throttles timers in background, time can fall behind — catch up instead of
+    // dumping a burst of past-due clicks (or going silent)
+    if(nextNoteTime < ctx.currentTime){ nextNoteTime = ctx.currentTime + 0.05; }
+    while(nextNoteTime < ctx.currentTime + SCHEDULE_AHEAD){
+      if(phase==="play"){
+        const patIdx=order[posInOrder];
+        click(nextNoteTime, beat===0);
+        uiQueue.push({time:nextNoteTime, kind:"play", patIdx, beat, finger:PATTERNS[patIdx][beat]});
+      }else{
+        const nextPat=order[(posInOrder+1)%order.length];
+        click(nextNoteTime, false);
+        uiQueue.push({time:nextNoteTime, kind:"pause", patIdx:nextPat, pauseBeat, pauseTotal:PAUSE_BEATS});
+      }
+      advance();
+    }
+  }else if(playing){
+    ctx.resume().catch(()=>{});   // best-effort revive after an iOS interruption
+  }
+  timerId=setTimeout(scheduler,LOOKAHEAD);
+}
+
+/* ---- visual sync ---- */
+let rafId=null;
+function draw(){
+  while(uiQueue.length && uiQueue[0].time <= ctx.currentTime){
+    const ev=uiQueue.shift();
+    renderBeat(ev);
+  }
+  rafId=requestAnimationFrame(draw);
+}
+
+const digitsEl=$("digits"), beatsEl=$("beats");
+function buildDigits(pat){
+  digitsEl.innerHTML="";
+  pat.forEach((n,i)=>{
+    const d=document.createElement("div");
+    d.className="dig"+(i===0?" first":"");
+    d.textContent=n; digitsEl.appendChild(d);
+  });
+}
+let lastPatIdx=-1;
+function renderBeat(ev){
+  if(ev.patIdx!==lastPatIdx){
+    lastPatIdx=ev.patIdx;
+    buildDigits(PATTERNS[ev.patIdx]);
+  }
+  const digs=[...digitsEl.children];
+  const dots=[...beatsEl.children];
+
+  if(ev.kind==="pause"){
+    // show next pattern at full brightness (readable), no finger highlighted; dots count down
+    digitsEl.classList.remove("preview");
+    digs.forEach(d=>d.classList.remove("active"));
+    const left=ev.pauseTotal-ev.pauseBeat;          // 4,3,2,1
+    dots.forEach((b,i)=>b.classList.toggle("on", i<left));
+    $("queue").textContent = "приготовься: "+fmt(PATTERNS[ev.patIdx]);
+    return;
+  }
+
+  digitsEl.classList.remove("preview");
+  digs.forEach((d,i)=>d.classList.toggle("active",i===ev.beat));
+  dots.forEach((b,i)=>b.classList.toggle("on",i < ev.finger));
+  const cur=order.indexOf(ev.patIdx);
+  const np=order[(cur+1)%order.length];
+  $("queue").textContent = order.length>1 ? "далее: "+fmt(PATTERNS[np]) : "";
+  // screen flash on downbeat
+  if(ev.beat===0){
+    const f=$("flash");
+    f.style.transition="none"; f.style.opacity="0.14";
+    requestAnimationFrame(()=>{ f.style.transition="opacity .25s"; f.style.opacity="0"; });
+  }
+}
+
+/* ---- wake lock (keep screen on) ---- */
+let wakeLock=null;
+async function keepAwake(on){
+  try{
+    if(on && "wakeLock" in navigator){ wakeLock=await navigator.wakeLock.request("screen"); }
+    else if(wakeLock){ await wakeLock.release(); wakeLock=null; }
+  }catch(e){}
+}
+function resumeAudio(){ if(ctx && ctx.state!=="running") ctx.resume().catch(()=>{}); }
+document.addEventListener("visibilitychange",()=>{
+  if(playing && document.visibilityState==="visible"){ keepAwake(true); resumeAudio(); }
+});
+// any touch revives audio after an iOS interruption (call/notification/lock/control-center)
+document.addEventListener("pointerdown",()=>{ if(playing) resumeAudio(); }, {passive:true});
+
+/* ---- start / stop ---- */
+async function startPlay(){
+  if(selected.size===0) return;
+  ctx = ctx || new (window.AudioContext||window.webkitAudioContext)();
+  ctx.onstatechange=()=>{ if(playing && ctx.state!=="running") ctx.resume().catch(()=>{}); };
+  if(ctx.state!=="running") await ctx.resume().catch(()=>{});
+
+  order=[...selected].sort((a,b)=>a-b);
+  posInOrder=0; beat=0; rep=0; phase="play"; pauseBeat=0; lastPatIdx=-1; uiQueue=[];
+  digitsEl.classList.remove("preview");
+
+  // beat dots
+  beatsEl.innerHTML=""; for(let i=0;i<4;i++) beatsEl.appendChild(document.createElement("i"));
+  buildDigits(PATTERNS[order[0]]);
+
+  playing=true;
+  $("setup").classList.add("hidden");
+  $("play").classList.remove("hidden");
+  const sb=$("start"); sb.textContent="■ Стоп"; sb.classList.add("stop");
+  keepAwake(true);
+
+  nextNoteTime=ctx.currentTime+0.1;
+  scheduler();
+  draw();
+}
+function stopPlay(){
+  playing=false;
+  clearTimeout(timerId); cancelAnimationFrame(rafId);
+  $("play").classList.add("hidden");
+  $("setup").classList.remove("hidden");
+  const sb=$("start"); sb.textContent="▶ Старт"; sb.classList.remove("stop");
+  keepAwake(false);
+}
+$("start").onclick=()=>{ playing?stopPlay():startPlay(); };
+
+setBpm(80); updateStart();
+</script>
+</body>
+</html>
