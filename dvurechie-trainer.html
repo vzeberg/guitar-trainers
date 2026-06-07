@@ -62,13 +62,15 @@
   .miniBtn.play{color:var(--accent); border-color:var(--accent-line);}
   .cells{display:grid; grid-template-columns:repeat(8,1fr); gap:6px;}
   .cells.wide{grid-template-columns:repeat(16,1fr); gap:5px;}
+  .boi .cells{row-gap:13px;}   /* в редакторе 16-ударный бой переносится в 2 строки по 8 */
   .cell{aspect-ratio:1/1; border-radius:var(--cell-radius); border:1px solid transparent; display:flex; align-items:center; justify-content:center; font-size:15px; font-weight:700; color:var(--faint); cursor:pointer; background:var(--cell-empty); transition:transform .08s, box-shadow .08s, background .12s, border-color .12s; position:relative;}
   .cells.wide .cell{font-size:12px;}
+  .boi .cells .cell{font-size:30px; font-weight:300;}   /* блок 2: стрелки в кружках вдвое крупнее и тоньше */
   .cell.d{background:var(--down); color:var(--down-fg);}
   .cell.u{background:transparent; color:var(--up); border:1.5px solid color-mix(in oklch, var(--up) 55%, transparent);}
   .cell.r{background:var(--cell-empty); color:var(--faint); opacity:.8;}
   .cell.beatmark::after{content:""; position:absolute; bottom:-7px; left:50%; transform:translateX(-50%); width:3px; height:3px; border-radius:50%; background:var(--faint); opacity:.5;}
-  .cells.wide .cell:nth-child(8n+1)::after{content:""; position:absolute; bottom:-7px; left:50%; transform:translateX(-50%); width:3px; height:3px; border-radius:50%; background:var(--accent); opacity:.9;}
+  .cells .cell:nth-child(8n+1)::after{content:""; position:absolute; bottom:-7px; left:50%; transform:translateX(-50%); width:3px; height:3px; border-radius:50%; background:var(--accent); opacity:.9;}
   .cell.live{transform:scale(1.16); z-index:2; box-shadow:0 0 0 2px var(--bg), 0 0 14px 2px color-mix(in oklch, var(--accent) 55%, transparent);}
   .cell.u.live{box-shadow:0 0 0 2px var(--bg), 0 0 14px 2px color-mix(in oklch, var(--up) 55%, transparent);}
   .cell.r.live{transform:scale(1.1); box-shadow:0 0 0 2px var(--bg), 0 0 10px 2px color-mix(in oklch, var(--faint) 50%, transparent);}
@@ -478,7 +480,7 @@ function renderBois(){
     card.appendChild(head);
 
     const pb = SPB;
-    const cells = document.createElement('div'); cells.className='cells wide'; cells.dataset.boi=bi;
+    const cells = document.createElement('div'); cells.className='cells'; cells.dataset.boi=bi;   // 8 в ряд: 16-ударный бой → 2 строки
     boi.forEach((tok, si)=>{
       const c = document.createElement('div');
       c.className = 'cell '+CLASS[tok]+(si%pb===0?' beatmark':'');
@@ -809,9 +811,19 @@ function advance(){
 }
 let stopRequested=false;
 
+// пересинхронизация: выкинуть устаревшие визуальные события и заново привязать
+// аудио-часы к текущему времени контекста — звук и стрелки снова совпадают
+function resync(){
+  uiQueue.length = 0;
+  nextTime = ctx.currentTime + 0.08;
+}
+
 function scheduler(){
   if(ctx.state==='running'){
-    if(nextTime < ctx.currentTime){ nextTime = ctx.currentTime+0.05; }
+    if(nextTime < ctx.currentTime){
+      if(ctx.currentTime - nextTime > 0.25) resync();   // далеко отстали (фон/троттлинг) → чистый ресинк
+      else nextTime = ctx.currentTime + 0.05;           // лёгкий дрейф → мягкая поправка
+    }
     while(nextTime < ctx.currentTime + SCHEDULE_AHEAD){
       if(stopRequested){ uiQueue.push({time:nextTime, kind:'end'}); break; }
       if(counting>0){
@@ -871,7 +883,7 @@ function renderEvent(ev){
     $('pcur').innerHTML = `<div class="cuname">${ev.n}</div>`;
     $('pprev').innerHTML=''; $('pnextc').innerHTML='';
     $('pnext').innerHTML = 'приготовься…';
-    arrowEl.className='arrowbig r'; arrowEl.textContent='·';
+    arrowEl.className='arrowbig r'; arrowEl.textContent='';
     [...beatsEl.children].forEach((b,i)=>b.classList.toggle('on', i<ev.n));
     return;
   }
@@ -890,7 +902,7 @@ function renderEvent(ev){
   cells.forEach((c,i)=>c.classList.toggle('live', i===ev.s));
   // big arrow
   arrowEl.className='arrowbig '+CLASS[ev.tok]+' pulse';
-  arrowEl.textContent=ARROW[ev.tok];
+  arrowEl.textContent = ev.tok==='-' ? '' : ARROW[ev.tok];   // на паузе стрелка пустая (без серого квадрата)
   requestAnimationFrame(()=>arrowEl.classList.remove('pulse'));
   // beat dots (доля = 2 удара; 16-ударный бой = 2 такта, точки идут по кругу 0..3)
   const q=Math.floor(ev.s/SPB)%4;
@@ -936,7 +948,12 @@ async function keepAwake(on){
   }catch(e){}
 }
 function resumeAudio(){ if(ctx && ctx.state!=='running') ctx.resume().catch(()=>{}); }
-document.addEventListener('visibilitychange',()=>{ if(playing && document.visibilityState==='visible'){ keepAwake(true); resumeAudio(); } });
+document.addEventListener('visibilitychange',()=>{
+  if(playing && document.visibilityState==='visible'){
+    keepAwake(true); resumeAudio();
+    if(ctx && ctx.state==='running') resync();   // снять накопленный дрейф после возврата вкладки из фона
+  }
+});
 document.addEventListener('pointerdown',()=>{ if(playing) resumeAudio(); }, {passive:true});
 
 /* ============ start / stop ============ */
@@ -955,13 +972,14 @@ async function startPlay(){
   if(state.count){ $('pcur').innerHTML=`<div class="cuname">4</div>`; $('pprev').innerHTML=''; $('pnextc').innerHTML=''; }
   else { renderChordUnit('pcur', seq[0].chord||'—'); renderChordUnit('pprev', prevChordOf(0)); renderChordUnit('pnextc', nextChordOf(0)); }
   $('pnext').innerHTML=''; $('pblock').textContent='';
-  arrowEl.className='arrowbig r'; arrowEl.textContent='·';
+  arrowEl.className='arrowbig r'; arrowEl.textContent='';
 
   playing=true;
   $('setup').classList.add('hidden'); $('play').classList.remove('hidden');
   const sb=$('start'); sb.textContent='■ Стоп'; sb.classList.add('stop');
   keepAwake(true);
 
+  clearTimeout(timerId); cancelAnimationFrame(rafId);   // гасим прежние циклы, чтобы не было двойного планировщика
   nextTime=ctx.currentTime+0.12;
   scheduler(); draw();
 }
