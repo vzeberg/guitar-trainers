@@ -142,16 +142,17 @@
   .bigbtn.stop{background:transparent; color:var(--danger); border:1.5px solid color-mix(in oklch, var(--danger) 50%, transparent);}
   .bigbtn:disabled{opacity:.35;}
   #play{display:flex; flex-direction:column; align-items:center; justify-content:flex-start; text-align:center; padding-top:14px;}
-  .phead{display:flex; align-items:center; justify-content:center; gap:22px; min-height:108px;}
-  .pdiag{width:88px; display:flex; align-items:center;}
-  .pdiag:empty{display:none;}
-  .pdiag svg{width:88px; height:auto;}
-  .pchord{font-family:var(--display); font-size:64px; font-weight:700; letter-spacing:-1px; line-height:1; color:var(--text);}
+  .phead{display:flex; align-items:flex-start; justify-content:center; gap:10px; min-height:190px;}
+  .cu{display:flex; flex-direction:column; align-items:center; gap:10px; width:128px; flex:0 0 auto;}
+  .cu.dim{opacity:.28;}
+  .cu:empty{display:none;}
+  .cu svg{width:88px; height:auto;}
+  .cuname{font-family:var(--display); font-size:64px; font-weight:700; letter-spacing:-1px; line-height:1; color:var(--text); white-space:nowrap;}
   .pnext{font-size:11.5px; color:var(--faint); font-weight:600; margin-bottom:14px; min-height:16px; text-transform:uppercase; letter-spacing:1.2px;}
   .pnext b{color:var(--accent); font-weight:700;}
   .arrowbig{font-size:106px; line-height:1; height:118px; font-weight:700; transition:transform .06s, color .06s; display:flex; align-items:center; justify-content:center;}
   .arrowbig.d{color:var(--down);}
-  .arrowbig.u{color:var(--up);}
+  .arrowbig.u{color:var(--down);}   /* стрелка вверх того же цвета, что и вниз */
   .arrowbig.r{color:var(--rest);}
   .arrowbig.pulse{transform:scale(1.12);}
   .pcells{width:100%; max-width:330px; margin:18px auto 8px;}
@@ -266,8 +267,9 @@
 <!-- ===== PLAY ===== -->
 <div class="screen hidden" id="play">
   <div class="phead">
-    <div class="pchord" id="pchord">—</div>
-    <div class="pdiag" id="pdiag"></div>
+    <div class="cu dim" id="pprev"></div>
+    <div class="cu" id="pcur"></div>
+    <div class="cu dim" id="pnextc"></div>
   </div>
   <div class="pnext" id="pnext"></div>
   <div class="arrowbig r" id="arrow">·</div>
@@ -759,10 +761,10 @@ function strum(time, tok, accent, chord){
   let order=notes.slice();
   if(tok==='U'){ order.reverse(); }
   const spread=tok==='U'?0.011:0.016;        // межструнный разброс
-  const base=(accent?0.5:0.34)*(tok==='U'?0.8:1);
+  const base=(accent?0.5:0.34);              // удар вверх такой же насыщенный, как вниз
   order.forEach((m,i)=>{
     const f=440*Math.pow(2,(m-69)/12);
-    const gain=base*(0.9+0.12*Math.random())*(tok==='U'? (0.7+0.3*i/order.length) : 1);
+    const gain=base*(0.9+0.12*Math.random());
     pluck(f, time+i*spread, gain);
   });
   pickNoise(time, tok, accent);
@@ -815,7 +817,7 @@ function scheduler(){
       if(counting>0){
         const beat = 4 - counting;          // 0..3
         metClick(nextTime, beat===0);
-        uiQueue.push({time:nextTime, kind:'count', n:beat+1});
+        uiQueue.push({time:nextTime, kind:'count', n:counting});   // обратный счёт 4,3,2,1
       }else{
         const blk=seq[bi]; const boi=blk.boi; const tok=boi[s]; const accent=(s%8===0);  // акцент на долю 1 каждого такта
         strum(nextTime, tok, accent, blk.chord);
@@ -849,23 +851,38 @@ function nextChordLabel(){
   const ni=(bi+1)%seq.length;
   return seq[ni]?seq[ni].chord:'';
 }
+// блок «имя аккорда + схема» (для центрального и соседних)
+function renderChordUnit(id, chord){
+  const el=$(id);
+  if(!chord){ el.innerHTML=''; return; }
+  el.innerHTML = `<div class="cuname">${chord}</div>` + (chordDiagram(chord)||'');
+}
+function prevChordOf(b){
+  if(b>0) return seq[b-1].chord;
+  return (state.loop && seq.length>1) ? seq[seq.length-1].chord : '';
+}
+function nextChordOf(b){
+  if(b<seq.length-1) return seq[b+1].chord;
+  return (state.loop && seq.length>1) ? seq[0].chord : '';
+}
 function renderEvent(ev){
   if(ev.kind==='end'){ stopPlay(); return; }
   if(ev.kind==='count'){
-    $('pchord').textContent = ev.n; $('pdiag').innerHTML='';
+    $('pcur').innerHTML = `<div class="cuname">${ev.n}</div>`;
+    $('pprev').innerHTML=''; $('pnextc').innerHTML='';
     $('pnext').innerHTML = 'приготовься…';
     arrowEl.className='arrowbig r'; arrowEl.textContent='·';
-    [...beatsEl.children].forEach((b,i)=>b.classList.toggle('on', i===ev.n-1));
+    [...beatsEl.children].forEach((b,i)=>b.classList.toggle('on', i<ev.n));
     return;
   }
   const blk=seq[ev.bi];
   if(ev.bi!==lastBi){
     lastBi=ev.bi;
     buildPCells(blk.boi);
-    $('pchord').textContent = blk.chord || '—';
-    $('pdiag').innerHTML = chordDiagram(blk.chord);
-    const nx=nextChordLabel();
-    $('pnext').innerHTML = nx ? `далее: <b>${nx}</b>` : '';
+    renderChordUnit('pcur', blk.chord || '—');
+    renderChordUnit('pprev', prevChordOf(ev.bi));
+    renderChordUnit('pnextc', nextChordOf(ev.bi));
+    $('pnext').innerHTML = '';
     $('pblock').textContent = `такт ${ev.bi+1}/${seq.length} · Бой ${blk.boi.__n||(state.bois.indexOf(blk.boi)+1)}`;
   }
   // highlight stroke
@@ -935,8 +952,8 @@ async function startPlay(){
 
   beatsEl.innerHTML=''; for(let i=0;i<4;i++) beatsEl.appendChild(document.createElement('i'));
   buildPCells(seq[0].boi);
-  $('pchord').textContent = state.count ? '1' : (seq[0].chord||'—');
-  $('pdiag').innerHTML = state.count ? '' : chordDiagram(seq[0].chord);
+  if(state.count){ $('pcur').innerHTML=`<div class="cuname">4</div>`; $('pprev').innerHTML=''; $('pnextc').innerHTML=''; }
+  else { renderChordUnit('pcur', seq[0].chord||'—'); renderChordUnit('pprev', prevChordOf(0)); renderChordUnit('pnextc', nextChordOf(0)); }
   $('pnext').innerHTML=''; $('pblock').textContent='';
   arrowEl.className='arrowbig r'; arrowEl.textContent='·';
 
