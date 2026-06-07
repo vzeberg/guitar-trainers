@@ -64,9 +64,9 @@
   .cells.wide{grid-template-columns:repeat(16,minmax(0,1fr)); gap:5px;}
   .cell{min-width:0;}
   .boi .cells{row-gap:13px;}   /* в редакторе 16-ударный бой переносится в 2 строки по 8 */
-  .cell{aspect-ratio:1/1; border-radius:var(--cell-radius); border:1px solid transparent; display:flex; align-items:center; justify-content:center; font-size:15px; font-weight:700; color:var(--faint); cursor:pointer; background:var(--cell-empty); transition:transform .08s, box-shadow .08s, background .12s, border-color .12s; position:relative;}
+  .cell{aspect-ratio:1/1; border-radius:var(--cell-radius); border:1px solid transparent; display:flex; align-items:center; justify-content:center; font-size:15px; font-weight:700; line-height:1; color:var(--faint); cursor:pointer; background:var(--cell-empty); transition:transform .08s, box-shadow .08s, background .12s, border-color .12s; position:relative;}
   .cells.wide .cell{font-size:12px;}
-  .boi .cells .cell{font-size:30px; font-weight:300;}   /* блок 2: стрелки в кружках вдвое крупнее и тоньше */
+  .boi .cells .cell{font-size:clamp(20px,6vw,30px); font-weight:300; line-height:1;}   /* блок 2: крупные тонкие стрелки, но не больше ячейки (чтобы круг не стал овалом) */
   .cell.d{background:var(--down); color:var(--down-fg);}
   .cell.u{background:transparent; color:var(--up); border:1.5px solid color-mix(in oklch, var(--up) 55%, transparent);}
   .cell.r{background:var(--cell-empty); color:var(--faint); opacity:.8;}
