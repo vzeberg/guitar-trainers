@@ -494,8 +494,7 @@ const CHORD_SHAPES = {
 
 /* Струна n (1..6) сидит в аппликатуре по индексу 6-n. */
 const fretOf = (chord, n) => { const sh=CHORD_SHAPES[chord]; return sh ? sh.f[6-n] : undefined; };
-const isMuted = (chord, n) => fretOf(chord, n) === 'x';
-/* Бас аккорда — самая толстая незаглушённая струна. Отдельная таблица не нужна:
+/* Бас аккорда — самая толстая струна, входящая в аккорд. Отдельная таблица не нужна:
    Am→5, Dm/Dm7→4, E/E7/F→6 считаются прямо из аппликатуры. */
 function bassString(chord){
   const sh = CHORD_SHAPES[chord];
@@ -503,15 +502,15 @@ function bassString(chord){
   const i = sh.f.findIndex(v => v !== 'x');
   return i < 0 ? 0 : 6 - i;
 }
-/* Струны шага после подстановки: 'Б' → бас, заглушённая → бас (иначе в партии дырка).
+/* Струны шага: подставляется только 'Б' → бас аккорда. Явно названная струна
+   играется как есть — × в аппликатуре значит «не задевать при бое», а не «нельзя
+   щипнуть»: под Am шестая просто открытая, и 5-3-(21)-6 берёт с неё низкое Ми.
    Возвращает уникальные номера от толстой к тонкой. */
 function resolveStep(step, chord){
   const bass = bassString(chord);
   const out = [];
   for(const t of step){
-    let n = (t === BASS) ? bass : t;
-    if(!n) continue;
-    if(isMuted(chord, n)) n = bass;      // 6-я струна в Am заглушена — играем бас аккорда
+    const n = (t === BASS) ? bass : t;
     if(n && !out.includes(n)) out.push(n);
   }
   return out.sort((a,b) => b-a);
@@ -1184,8 +1183,9 @@ const midiToFreq = m => 440*Math.pow(2,(m-69)/12);
 /* Частота конкретной струны в конкретном аккорде. */
 function stringFreq(chord, n){
   const fr = fretOf(chord, n);
-  if(fr === undefined || fr === 'x') return 0;
-  return midiToFreq(OPEN_MIDI[6-n] + (fr|0));
+  if(fr === undefined) return 0;
+  // × — это «не бей по ней», а не «её нет»: пальцы её не прижимают, значит открытая
+  return midiToFreq(OPEN_MIDI[6-n] + (fr === 'x' ? 0 : (fr|0)));
 }
 function ksBuffer(freq){
   const sr=ctx.sampleRate;
