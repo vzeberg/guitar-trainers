@@ -124,6 +124,29 @@
   .tabcell.on{background:var(--pick); border-color:var(--pick);}
   .tabcell.on.bass{background:var(--bass); border-color:var(--bass);}
   .tab-legend{font-size:11px; color:var(--faint); margin:11px 2px 0; font-weight:500; line-height:1.5;}
+  /* строка вместо целого раздела: сетки переборов уехали на свой экран */
+  .opener{width:100%; display:flex; align-items:center; gap:11px; background:var(--panel);
+    border:var(--border-w) solid var(--line-soft); border-radius:var(--card-radius); padding:14px 15px;
+    cursor:pointer; font-family:var(--font); box-shadow:var(--shadow); color:var(--text); text-align:left;}
+  .opener:active{transform:translateY(1px);}
+  .opener:hover{border-color:var(--accent-line);}
+  .opener .t{flex:1; min-width:0; font-size:14px; font-weight:600;}
+  .opener .t em{display:block; font-style:normal; font-family:var(--mono); font-size:10.5px;
+    font-weight:700; color:var(--faint); margin-top:3px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .opener .arr{flex:0 0 auto; color:var(--accent); font-size:19px; font-weight:700; line-height:1;}
+  /* полноэкранный лист — как шпаргалка в тренажёре боя */
+  .full{position:fixed; inset:0; z-index:80; background:var(--bg); padding:env(safe-area-inset-top) 0 0;}
+  .full.hidden{display:none !important;}
+  .full-inner{max-width:var(--maxw); margin:0 auto; height:100%; display:flex; flex-direction:column;}
+  .full-head{display:flex; align-items:flex-start; justify-content:space-between; gap:12px;
+    padding:14px 18px 12px; border-bottom:1px solid var(--line-soft);}
+  .full-title{font-family:var(--display); font-size:21px; font-weight:700; line-height:1.1;}
+  .full-title span{display:block; font-family:var(--mono); font-size:10px; letter-spacing:1.5px;
+    text-transform:uppercase; color:var(--faint); font-weight:700; margin-top:3px;}
+  .full-close{flex:0 0 auto; background:transparent; border:1px solid var(--accent-line); color:var(--accent);
+    border-radius:10px; padding:8px 15px; font-size:13px; font-weight:700; font-family:var(--font); cursor:pointer;}
+  .full-close:active{transform:translateY(1px);}
+  .full-body{flex:1; min-height:0; overflow-y:auto; -webkit-overflow-scrolling:touch; padding:14px 16px 28px;}
 
   /* ---- ячейки такта на экране игры ---- */
   .cells{display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px 9px;}
@@ -303,11 +326,11 @@
   <div id="sections"></div>
   <button class="addblock" id="addSection" type="button">＋ Добавить раздел</button>
 
-  <div class="section-title"><span class="sec-n">02</span>Переборы<span class="hint">тап: струна на щипке</span></div>
-  <div id="patterns"></div>
-  <button class="addblock" id="addPattern" type="button">＋ Добавить перебор</button>
-  <p class="tab-legend">Строки — струны (6 толстая сверху, 1 тонкая снизу), столбцы — четыре щипка такта.
-    Верхняя строка «Б» — бас текущего аккорда: подставится 5-я для Am, 4-я для Dm, 6-я для E и F.</p>
+  <div class="section-title"><span class="sec-n">02</span>Переборы<span class="hint">рисунок щипков</span></div>
+  <button class="opener" id="patOpen" type="button">
+    <span class="t">Настроить переборы<em id="patList"></em></span>
+    <span class="arr" aria-hidden="true">›</span>
+  </button>
 
   <div class="section-title"><span class="sec-n">03</span>Аккорды<button class="diagToggle" id="diagToggle" type="button">показать схемы</button></div>
   <div class="chips" id="chips"></div>
@@ -402,6 +425,22 @@
     <div class="modal-btns">
       <button class="modal-cancel" id="confirmCancel" type="button">Отмена</button>
       <button class="modal-ok" id="confirmOk" type="button">Удалить</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== ЭКРАН ПЕРЕБОРОВ ===== -->
+<div class="full hidden" id="patmenu" role="dialog" aria-modal="true" aria-labelledby="patmenuTitle">
+  <div class="full-inner">
+    <div class="full-head">
+      <div class="full-title" id="patmenuTitle">Переборы<span>тап: струна на щипке</span></div>
+      <button class="full-close" id="patClose" type="button">Готово</button>
+    </div>
+    <div class="full-body">
+      <div id="patterns"></div>
+      <button class="addblock" id="addPattern" type="button">＋ Добавить перебор</button>
+      <p class="tab-legend">Строки — струны (6 толстая сверху, 1 тонкая снизу), столбцы — четыре щипка такта.
+        Верхняя строка «Б» — бас текущего аккорда: подставится 5-я для Am, 4-я для Dm, 6-я для E и F.</p>
     </div>
   </div>
 </div>
@@ -733,6 +772,7 @@ function renderPatterns(){
     card.appendChild(tab);
     wrap.appendChild(card);
   });
+  syncPatOpener();
 }
 /* Переключение одной струны на одном щипке — перерисовываем только кнопку и подпись. */
 function toggleStep(pi, s, row, btn, nameEl){
@@ -743,7 +783,7 @@ function toggleStep(pi, s, row, btn, nameEl){
   btn.classList.toggle('on', on);
   btn.setAttribute('aria-pressed', String(on));
   nameEl.textContent = patternLabel(state.patterns[pi].steps);
-  save(); refreshPatternSelectors();
+  save(); syncPatOpener(); refreshPatternSelectors();
 }
 function deletePattern(pi){
   if(state.patterns.length<=1) return;
@@ -755,6 +795,17 @@ function deletePattern(pi){
   });
   save(); renderPatterns(); renderSections();
 }
+/* Открывашка показывает, что уже есть, чтобы ради списка не лезть внутрь. */
+function syncPatOpener(){
+  const labels = state.patterns.map(p=>patternLabel(p.steps));
+  $('patList').textContent = labels.join('  ·  ');
+  $('patOpen').setAttribute('aria-label', 'Настроить переборы: ' + labels.join(', '));
+}
+function openPatMenu(){ $('patmenu').classList.remove('hidden'); $('patClose').focus(); }
+function closePatMenu(){ stopAudition(); $('patmenu').classList.add('hidden'); }
+$('patOpen').onclick=openPatMenu;
+$('patClose').onclick=closePatMenu;
+
 $('addPattern').onclick=()=>{
   state.patterns.push({ steps:[[BASS],[3],[2,1],[3]] });
   save(); renderPatterns(); renderSections();
@@ -1524,7 +1575,7 @@ async function startPlay(practice){
   practiceSection = p;
   const snapshot = buildSeq(p);
   if(!snapshot.length){ practiceSection=null; toast('Сначала добавь такты'); return; }
-  stopAudition();
+  stopAudition(); closePatMenu();
   ensureCtx();
   if(ctx.state!=='running'){ try{ await ctx.resume(); }catch(e){} }
 
@@ -1568,14 +1619,17 @@ $('start').onclick=()=>{ playing?stopPlay():startPlay(null); };
 /* ============ клавиатура ============ */
 document.addEventListener('keydown', e=>{
   if(e.key==='Escape'){
+    // сверху вниз по слоям: подтверждение и лист лежат над экраном переборов
+    if(!$('confirm').classList.contains('hidden')){ closeConfirm(); return; }
     if(!$('sheet').classList.contains('hidden')){ closeSheet(); return; }
-    if(!$('confirm').classList.contains('hidden')) closeConfirm();
+    if(!$('patmenu').classList.contains('hidden')) closePatMenu();
     return;
   }
   if(e.key===' ' || e.code==='Space'){
     const t=e.target;
     if(t && (t.isContentEditable || /^(INPUT|SELECT|TEXTAREA|BUTTON|A)$/.test(t.tagName))) return;
-    if(!$('confirm').classList.contains('hidden') || !$('sheet').classList.contains('hidden')) return;
+    if(!$('confirm').classList.contains('hidden') || !$('sheet').classList.contains('hidden')
+       || !$('patmenu').classList.contains('hidden')) return;
     e.preventDefault();
     playing ? stopPlay() : startPlay(null);
   }
