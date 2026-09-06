@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="Тренажёр боя">
+  <rect width="512" height="512" fill="#f4f0e7"/>
+  <g fill="none" stroke="#ae2e2a" stroke-width="34" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M256 116 V 388"/>
+    <path d="M176 306 L 256 392 L 336 306"/>
+  </g>
+</svg>
