@@ -104,12 +104,9 @@
   .tile:active{transform:translateY(1px);}
   .tile .ch{font-family:var(--display); font-size:19px; font-weight:700; line-height:1; letter-spacing:-.3px;}
   .tile .ov{font-family:var(--mono); font-size:8.5px; font-weight:700; color:var(--accent); line-height:1; letter-spacing:.2px;}
-  .tile.warn{border-color:color-mix(in oklch, var(--danger) 55%, transparent);}
-  .tile .warnmark{position:absolute; top:3px; right:5px; color:var(--danger); font-size:11px; font-weight:700; line-height:1;}
   .tile.add{border-style:dashed; color:var(--muted); font-size:19px; font-weight:600; background:transparent;}
   .tile.add:hover{border-color:var(--accent-line); color:var(--accent);}
   .sec-foot{display:flex; gap:8px; margin-top:11px;}
-  .sec-warn{font-size:11px; color:var(--danger); font-weight:600; margin:9px 2px 0; line-height:1.45;}
 
   /* ---- редактор перебора: сетка табулатуры ---- */
   .pat{background:var(--panel); border:var(--border-w) solid var(--line-soft); border-radius:var(--card-radius); padding:12px 13px 14px; margin-bottom:10px; box-shadow:var(--shadow);}
@@ -405,7 +402,6 @@
     <div class="pickrow" id="sheetChords"></div>
     <div class="sheet-lab">Перебор</div>
     <div class="pickrow" id="sheetPatterns"></div>
-    <div class="sec-warn hidden" id="sheetWarn"></div>
     <div class="sheet-acts">
       <button id="sheetLeft" type="button">← левее</button>
       <button id="sheetDup" type="button">Дублировать</button>
@@ -508,15 +504,6 @@ function resolveStep(step, chord){
   }
   return out.sort((a,b) => b-a);
 }
-/* Явно (не через 'Б') запрошенные, но заглушённые струны — повод предупредить в редакторе. */
-function mutedIn(steps, chord){
-  if(!CHORD_SHAPES[chord]) return [];
-  const bad = [];
-  for(const st of steps) for(const t of st)
-    if(t !== BASS && isMuted(chord, t) && !bad.includes(t)) bad.push(t);
-  return bad.sort((a,b) => b-a);
-}
-
 /* строит SVG-диаграмму аккорда; '' если схемы нет.
    В разметку попадают только числа из CHORD_SHAPES — имя аккорда сюда не подставляется. */
 function chordDiagram(name){
@@ -774,13 +761,6 @@ function refreshPatternSelectors(){
    где нужен переход — поэтому bar.pattern === null означает «как в разделе». */
 const barPattern = (sec, bar) => state.patterns[bar.pattern === null ? sec.pattern : bar.pattern]
                                  || state.patterns[0];
-/* Текст предупреждения, если такт просит струну, заглушённую в его аккорде. */
-function barWarning(sec, bar){
-  const bad = mutedIn(barPattern(sec, bar).steps, bar.chord);
-  if(!bad.length) return '';
-  const b = bassString(bar.chord);
-  return 'в ' + bar.chord + ' ' + bad.join(', ') + '-я струна заглушена — играется бас ' + b + '-й';
-}
 
 function renderSections(){
   const wrap = $('sections'); wrap.textContent='';
@@ -848,7 +828,6 @@ function renderSections(){
     const tiles=document.createElement('div'); tiles.className='tiles';
     sec.bars.forEach((bar, bi)=>{
       const t=document.createElement('button'); t.type='button'; t.className='tile';
-      const warn = barWarning(sec, bar);
       const ch=document.createElement('span'); ch.className='ch'; ch.textContent=bar.chord||'—';
       t.appendChild(ch);
       if(bar.pattern!==null){
@@ -856,12 +835,7 @@ function renderSections(){
         ov.textContent=patternLabel(state.patterns[bar.pattern].steps);
         t.appendChild(ov);
       }
-      if(warn){
-        t.classList.add('warn');
-        const w=document.createElement('span'); w.className='warnmark'; w.textContent='!';
-        t.appendChild(w);
-      }
-      t.setAttribute('aria-label','Такт '+(bi+1)+', аккорд '+(bar.chord||'нет')+(warn?'. '+warn:''));
+      t.setAttribute('aria-label','Такт '+(bi+1)+', аккорд '+(bar.chord||'нет'));
       t.onclick=()=>openSheet(si, bi);
       tiles.appendChild(t);
     });
@@ -874,12 +848,6 @@ function renderSections(){
     };
     tiles.appendChild(add);
     card.appendChild(tiles);
-
-    const warns = sec.bars.map((b,i)=>{ const w=barWarning(sec,b); return w?('такт '+(i+1)+': '+w):''; }).filter(Boolean);
-    if(warns.length){
-      const w=document.createElement('div'); w.className='sec-warn'; w.textContent=warns.join('; ');
-      card.appendChild(w);
-    }
 
     const foot=document.createElement('div'); foot.className='sec-foot';
     const tr=document.createElement('button'); tr.type='button'; tr.className='miniBtn play grow';
@@ -989,11 +957,6 @@ function renderSheet(){
     b.onclick=()=>{ bar.pattern=pi; save(); renderSheet(); renderSections(); };
     pw.appendChild(b);
   });
-
-  const warn=barWarning(sec, bar);
-  const wEl=$('sheetWarn');
-  wEl.textContent=warn;
-  wEl.classList.toggle('hidden', !warn);
 
   $('sheetLeft').disabled  = sheetRef.bi===0;
   $('sheetRight').disabled = sheetRef.bi===sec.bars.length-1;
