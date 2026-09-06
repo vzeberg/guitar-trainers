@@ -4,12 +4,13 @@
      свои статики   — кэш вперёд с фоновым обновлением;
      Google Fonts   — stale-while-revalidate, иначе без сети слетают шрифты.
    Версию бампать при изменении списка SHELL. */
-const VERSION = 'v1';
+const VERSION = 'v2';
 const SHELL   = 'shell-' + VERSION;
 const RUNTIME = 'runtime-' + VERSION;
 const SHELL_FILES = [
   './',
   './index.html',
+  './perebor.html',
   './manifest.webmanifest',
   './icon.svg',
   './apple-touch-icon.png',
@@ -52,10 +53,12 @@ self.addEventListener('fetch', e=>{
       fetch(req)
         .then(res=>{
           const copy = res.clone();
-          caches.open(SHELL).then(c=>c.put('./index.html', copy)).catch(()=>{});
+          // кладём под собственный адрес: иначе офлайн любая страница отдавала бы index.html
+          caches.open(SHELL).then(c=>c.put(req, copy)).catch(()=>{});
           return res;
         })
-        .catch(async ()=> (await caches.match('./index.html')) || (await caches.match('./')) || Response.error())
+        .catch(async ()=> (await caches.match(req)) || (await caches.match('./index.html'))
+                       || (await caches.match('./')) || Response.error())
     );
     return;
   }
