@@ -197,6 +197,8 @@
   .stepper .tap{flex:1; height:46px; font-size:12.5px; font-weight:600; color:var(--accent); border-color:var(--accent-line); font-family:var(--font); width:auto;}
   .ramp{display:flex; align-items:center; gap:8px; margin-top:10px; padding-top:12px; border-top:1px solid var(--line-soft); flex-wrap:wrap;}
   .ramp .rl{font-size:12px; font-weight:600; color:var(--muted); flex:1 1 100%;}
+  .gaprow{display:flex; align-items:center; gap:10px;}
+  .gaprow .gl{flex:1; min-width:0; font-size:12px; font-weight:600; color:var(--muted); line-height:1.35;}
   .ramp .rl b{color:var(--text); font-family:var(--mono); font-size:12px;}
 
   /* ---- футер и экран игры ---- */
@@ -319,6 +321,16 @@
     <button id="optMet" type="button">Метроном<br>выкл</button>
     <button id="optCount" class="on" type="button">Отсчёт<br>вкл</button>
     <button id="optLoop" class="on" type="button">Зациклить<br>вкл</button>
+  </div>
+  <div class="ctrl">
+    <div class="gaprow">
+      <div class="gl" id="gapLabel">Пауза на смену аккорда выключена</div>
+      <div class="repbox">
+        <button id="gapMinus" type="button" aria-label="Пауза короче">–</button>
+        <div class="n"><span id="gapN">0</span><small id="gapUnit">доли</small></div>
+        <button id="gapPlus" type="button" aria-label="Пауза длиннее">+</button>
+      </div>
+    </div>
   </div>
 
   <div class="section-title"><span class="sec-n">04</span>Темп</div>
@@ -562,6 +574,7 @@ function defaultState(){
         {chord:'E',  pattern:null}, {chord:'Am', pattern:null} ] },
     ],
     bpm:92, met:false, count:true, loop:true, diagrams:false,
+    gap:0,                                              // доли тишины перед сменой аккорда
     ramp:{ on:false, step:4, every:4 },
   };
 }
@@ -622,6 +635,7 @@ function sanitize(raw){
 
   st.bpm = clampInt(raw.bpm, 40, 300, d.bpm);
   for(const k of ['met','count','loop','diagrams']) st[k] = (typeof raw[k] === 'boolean') ? raw[k] : d[k];
+  st.gap = clampInt(raw.gap, 0, 8, d.gap);
   const r = (raw.ramp && typeof raw.ramp === 'object') ? raw.ramp : {};
   st.ramp = { on: typeof r.on === 'boolean' ? r.on : d.ramp.on,
               step: clampInt(r.step, 1, 20, d.ramp.step),
@@ -1054,6 +1068,22 @@ $('optMet').onclick=()=>{ state.met=!state.met; save(); syncOpts(); };
 $('optCount').onclick=()=>{ state.count=!state.count; save(); syncOpts(); };
 $('optLoop').onclick=()=>{ state.loop=!state.loop; save(); syncOpts(); };
 
+/* ---- пауза на смену аккорда ---- */
+const beatWord = n => (n%100>=11 && n%100<=14) ? 'долей'
+                    : n%10===1 ? 'доля' : (n%10>=2 && n%10<=4) ? 'доли' : 'долей';
+function syncGap(){
+  const g=state.gap;
+  $('gapN').textContent=g;
+  $('gapUnit').textContent=beatWord(g);
+  $('gapLabel').textContent = g
+    ? 'Перед сменой аккорда — пауза ' + g + ' ' + beatWord(g)
+    : 'Пауза на смену аккорда выключена';
+  $('gapMinus').disabled = g<=0;
+  $('gapPlus').disabled  = g>=8;
+}
+$('gapMinus').onclick=()=>{ state.gap=Math.max(0,state.gap-1); save(); syncGap(); };
+$('gapPlus').onclick =()=>{ state.gap=Math.min(8,state.gap+1); save(); syncGap(); };
+
 /* ============ BPM ============ */
 function setBpm(v){
   state.bpm=clampInt(v, 40, 300, state.bpm);
@@ -1231,6 +1261,7 @@ let seq=[];                       // снимок партии на время �
 let practiceSection=null;         // индекс раздела в режиме «тренировать раздел», иначе null
 let idx=0, s=0, passes=0;         // такт / щипок в такте / пройденных кругов
 let counting=0;                   // сколько долей отсчёта осталось
+let gapLeft=0;                    // сколько долей паузы на смену аккорда осталось
 let nextTime=0, timerId=null, rafId=null;
 let stopRequested=false;
 let uiQueue=[];
@@ -1260,6 +1291,7 @@ function buildSeq(practice){
 
 function advance(){
   if(counting>0){ nextTime += 60/state.bpm; counting--; return; }   // отсчёт идёт долями
+  if(gapLeft>0){ nextTime += 60/state.bpm; gapLeft--; return; }     // пауза тоже идёт долями
   nextTime += stepDur();
   s++;
   if(s>=STEPS_PER_BAR){
@@ -1269,7 +1301,15 @@ function advance(){
       if(looping()) rampTick();
       else stopRequested=true;
     }
+    if(!stopRequested) armGap();
   }
+}
+/* Пауза вставляется только там, где аккорд действительно меняется:
+   одинаковые аккорды подряд играются встык, как и раньше. */
+function armGap(){
+  if(!state.gap || seq.length<2) return;
+  const prev = seq[(idx - 1 + seq.length) % seq.length];
+  if(prev && seq[idx] && prev.chord !== seq[idx].chord) gapLeft = state.gap;
 }
 /* Разгон: каждые ramp.every кругов темп подрастает на ramp.step, пока не упрётся в 300. */
 function rampTick(){
@@ -1298,6 +1338,9 @@ function scheduler(){
       if(counting>0){
         metClick(nextTime, counting===STEPS_PER_BAR);
         uiQueue.push({time:nextTime, kind:'count', n:counting});   // обратный счёт 4,3,2,1
+      }else if(gapLeft>0){
+        if(state.met) metClick(nextTime, false);                   // пульс не теряется, щипка нет
+        uiQueue.push({time:nextTime, kind:'gap', n:gapLeft, bi:idx});
       }else{
         const b=seq[idx], accent=(s===0);                          // акцент на первую долю такта
         pickStep(nextTime, b.steps[s], b.chord, accent);
@@ -1366,6 +1409,21 @@ function renderEvent(ev){
     $('pbpm').textContent=ev.bpm;
     const m=$('prampMark'); m.textContent=' ↑';
     setTimeout(()=>{ m.textContent=''; }, 900);
+    return;
+  }
+  if(ev.kind==='gap'){
+    const g=seq[ev.bi];
+    buildPCells(g);                       // показываем такт, который вот-вот пойдёт
+    renderChordUnit('pcur', g.chord || '—');
+    renderChordUnit('pprev', prevChordOf(ev.bi));
+    $('pnextc').textContent='';
+    $('pnext').textContent='меняй аккорд';
+    $('pblock').textContent = g.secName + ' · такт ' + g.barNo + '/' + g.barCount;
+    strnumEl.className='stringnum r';
+    strnumEl.textContent=String(ev.n);
+    litStrings([]);
+    Array.from(beatsEl.children).forEach((x,i)=>x.classList.toggle('on', i<ev.n));
+    lastBi=-1;                            // первый щипок такта перерисует всё как надо
     return;
   }
   if(ev.kind==='count'){
@@ -1474,7 +1532,7 @@ async function startPlay(practice){
   const uniq=[]; for(const b of seq) if(b.chord && !uniq.includes(b.chord)) uniq.push(b.chord);
   prewarm(uniq);
 
-  idx=0; s=0; passes=0; lastBi=-1; uiQueue=[]; stopRequested=false;
+  idx=0; s=0; passes=0; gapLeft=0; lastBi=-1; uiQueue=[]; stopRequested=false;
   counting = state.count ? STEPS_PER_BAR : 0;   // один такт отсчёта
 
   beatsEl.textContent=''; for(let i=0;i<STEPS_PER_BAR;i++) beatsEl.appendChild(document.createElement('i'));
@@ -1545,7 +1603,7 @@ titleEl.addEventListener('blur', ()=>{
 function renderAll(){
   titleEl.textContent = state.song;
   renderPatterns(); renderChips(); renderSections();
-  applyDiagrams(); syncOpts(); setBpm(state.bpm); syncRamp();
+  applyDiagrams(); syncOpts(); setBpm(state.bpm); syncRamp(); syncGap();
 }
 buildStrunes();
 renderAll();
