@@ -124,6 +124,42 @@
   .tabcell.on{background:var(--pick); border-color:var(--pick);}
   .tabcell.on.bass{background:var(--bass); border-color:var(--bass);}
   .tab-legend{font-size:11px; color:var(--faint); margin:11px 2px 0; font-weight:500; line-height:1.5;}
+  /* переключатель дробления: четвертями (4 щипка) или восьмыми (8) */
+  .divrow{display:flex; align-items:center; gap:7px; margin:0 0 11px;}
+  .divrow .dl{font-size:11px; color:var(--faint); font-weight:600; margin-right:auto;}
+  .divbtn{background:var(--panel2); border:1px solid var(--line); color:var(--muted); border-radius:8px;
+    padding:6px 11px; font-family:var(--mono); font-size:11.5px; font-weight:700; cursor:pointer;}
+  .divbtn.on{background:var(--accent-dim); border-color:var(--accent); color:var(--accent);}
+  .divbtn:active{transform:translateY(1px);}
+
+  /* ---- редактор риффа: одна нота на щипок ---- */
+  .riff-bar{margin-bottom:9px;}
+  .riff-lab{font-family:var(--mono); font-size:9.5px; letter-spacing:1px; text-transform:uppercase;
+    color:var(--faint); font-weight:700; margin:0 2px 5px; display:flex; align-items:center; gap:7px;}
+  .riff-lab .rx{margin-left:auto; background:transparent; border:1px solid var(--line); color:var(--muted);
+    border-radius:6px; padding:1px 6px; font-size:11px; font-weight:700; cursor:pointer; font-family:var(--font);}
+  .rsteps{display:grid; gap:5px;}
+  .rstep{min-width:0; aspect-ratio:1/1; max-height:40px; border-radius:var(--cell-radius);
+    border:1px solid var(--line-soft); background:var(--cell-empty); color:var(--faint);
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1px;
+    cursor:pointer; padding:0; font-family:var(--mono); font-weight:700; -webkit-appearance:none; appearance:none;
+    transition:transform .08s, background .12s, border-color .12s;}
+  .rstep:active{transform:scale(.92);}
+  .rstep.on{background:var(--pick); border-color:var(--pick); color:var(--pick-fg);}
+  .rstep .f{font-size:14px; line-height:1;}
+  .rstep .s{font-size:8px; line-height:1; opacity:.75;}
+  .rstep.sel{border-color:var(--accent); box-shadow:0 0 0 2px var(--accent-dim);}
+  .riff-hint{font-size:11px; color:var(--faint); margin:2px 2px 0; font-weight:500; line-height:1.5;}
+  /* бейдж типа раздела */
+  .kindbadge{font-family:var(--mono); font-size:9px; letter-spacing:.8px; text-transform:uppercase;
+    color:var(--bass); background:color-mix(in oklch, var(--bass) 14%, transparent);
+    border:1px solid color-mix(in oklch, var(--bass) 40%, transparent); border-radius:6px;
+    padding:2px 5px; font-weight:700; line-height:1; flex:0 0 auto;}
+  /* выбор лада в листе риффа */
+  .fretrow{display:flex; align-items:center; gap:9px;}
+  .fretrow .fv{font-family:var(--mono); font-size:26px; font-weight:700; color:var(--text); min-width:52px; text-align:center;}
+  .fretrow button{flex:0 0 auto; width:46px; background:var(--panel2); border:1px solid var(--line); color:var(--text);
+    border-radius:10px; padding:11px 0; font-size:17px; font-weight:700; cursor:pointer; font-family:var(--font);}
   /* строка вместо целого раздела: сетки переборов уехали на свой экран */
   .opener{width:100%; display:flex; align-items:center; gap:11px; background:var(--panel);
     border:var(--border-w) solid var(--line-soft); border-radius:var(--card-radius); padding:14px 15px;
@@ -150,12 +186,18 @@
 
   /* ---- ячейки такта на экране игры ---- */
   .cells{display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px 9px;}
+  .cells.d8{grid-template-columns:repeat(8,minmax(0,1fr)); gap:12px 5px;}
+  .cells.d8 .cell{font-size:11px;}
+  .cells.d8 .cell .st{font-size:6.5px;}
   .cell{min-width:0; aspect-ratio:1/1; border-radius:var(--cell-radius); border:1px solid transparent; display:flex; align-items:center; justify-content:center;
     font-family:var(--mono); font-size:17px; font-weight:700; line-height:1; color:var(--pick-fg); background:var(--pick);
     transition:transform .08s, box-shadow .08s, background .12s, border-color .12s; position:relative; padding:0;}
   .cell.r{background:var(--cell-empty); color:var(--faint); opacity:.65; font-weight:400;}
   .cell::after{content:""; position:absolute; bottom:-7px; left:50%; transform:translateX(-50%); width:3px; height:3px; border-radius:50%; background:var(--faint); opacity:.5;}
-  .cell:nth-child(4n+1)::after{background:var(--accent); opacity:.9;}   /* такт = 4 щипка, сильная доля — первая */
+  /* сильная доля помечается классом, а не позицией: щипков в такте может быть 4 или 8 */
+  .cell.strong::after{background:var(--accent); opacity:.9;}
+  .cell.off::after{opacity:.22;}                                        /* щипок между долями */
+  .cell .st{position:absolute; top:2px; left:4px; font-size:8px; font-weight:700; opacity:.7; line-height:1;}
   .cell.live{transform:scale(1.16); z-index:2; box-shadow:0 0 0 2px var(--bg), 0 0 14px 2px color-mix(in oklch, var(--accent) 55%, transparent);}
   .cell.r.live{transform:scale(1.1); box-shadow:0 0 0 2px var(--bg), 0 0 10px 2px color-mix(in oklch, var(--faint) 50%, transparent);}
 
@@ -187,6 +229,8 @@
   .miniBtn.grow{flex:1;}
   .miniBtn.del{color:var(--faint); border-color:var(--line-soft); padding:7px 11px; font-size:16px; line-height:1;}
   .miniBtn.del:hover{color:var(--danger); border-color:color-mix(in oklch, var(--danger) 45%, transparent);}
+  .miniBtn.dup{color:var(--faint); border-color:var(--line-soft); padding:7px 10px; font-size:14px; line-height:1;}
+  .miniBtn.dup:hover{color:var(--accent); border-color:var(--accent-line);}
   .repbox{display:flex; align-items:center; gap:3px; flex:0 0 auto;}
   .repbox button{width:28px; height:32px; border-radius:8px; border:1px solid var(--line); background:var(--panel2); color:var(--text); font-size:16px; font-weight:700; cursor:pointer; font-family:inherit;}
   .repbox .n{min-width:30px; text-align:center; font-size:13px; font-weight:700; font-family:var(--mono);}
@@ -199,6 +243,8 @@
   .sec.placeholder{background:var(--accent-dim); border:1.5px dashed var(--accent-line); box-shadow:none;}
   .addblock{width:100%; background:transparent; border:1px dashed var(--line); color:var(--muted); border-radius:var(--card-radius); padding:13px; font-size:13px; font-weight:600; cursor:pointer; margin-top:2px; font-family:var(--font);}
   .addblock:hover{border-color:var(--accent-line); color:var(--accent);}
+  .addrow{display:flex; gap:8px; margin-top:2px;}
+  .addrow .addblock{flex:1; min-width:0; margin-top:0; padding:13px 6px;}
   .opts{display:flex; gap:8px; margin-top:11px;}
   .opts button{flex:1; background:var(--panel); border:var(--border-w) solid var(--line-soft); color:var(--muted); border-radius:var(--card-radius); padding:12px 6px; font-size:12px; font-weight:600; cursor:pointer; line-height:1.4; font-family:var(--font); box-shadow:var(--shadow);}
   .opts button.on{background:var(--accent-dim); border-color:var(--accent-line); color:var(--accent);}
@@ -225,7 +271,15 @@
   .ramp .rl b{color:var(--text); font-family:var(--mono); font-size:12px;}
 
   /* ---- футер и экран игры ---- */
-  .footer{padding:11px 16px calc(11px + env(safe-area-inset-bottom)); border-top:1px solid var(--line-soft); background:var(--bg2);}
+  .footer{display:flex; gap:9px; align-items:stretch; padding:11px 16px calc(11px + env(safe-area-inset-bottom)); border-top:1px solid var(--line-soft); background:var(--bg2);}
+  /* flex-basis 0, а не auto: тогда «Заново» и «Стоп» делят ширину поровну,
+     независимо от длины надписи */
+  /* рамка у обеих одинаковая (у «Стоп» прозрачная): при flex-basis:0 она входит
+     в минимальный размер, и без этого кнопки расходились на пару пикселей */
+  .footer .bigbtn{flex:1 1 0; width:auto; min-width:0; border:1.5px solid transparent;}
+  /* «Заново» появляется только на экране игры и не спорит со «Стоп» за внимание */
+  .bigbtn.ghost{background:transparent; color:var(--accent);
+    border:1.5px solid var(--accent-line); letter-spacing:0;}
   .bigbtn{width:100%; padding:17px; border:none; border-radius:var(--card-radius); font-size:16px; font-weight:700; color:var(--start-fg); background:var(--accent); cursor:pointer; letter-spacing:.3px; font-family:var(--font);}
   .bigbtn:active{transform:translateY(1px);}
   .bigbtn.stop{background:transparent; color:var(--danger); border:1.5px solid color-mix(in oklch, var(--danger) 50%, transparent);}
@@ -323,8 +377,15 @@
 <div class="screen" id="setup">
 
   <div class="section-title main"><span class="sec-n">01</span>Песня<span class="hint">разделы и такты</span></div>
+  <button class="opener" id="presetBtn" type="button">
+    <span class="t">Загрузить «Серебро» целиком<em>вступление, куплет и два припева — заменит собранное</em></span>
+    <span class="arr" aria-hidden="true">↻</span>
+  </button>
   <div id="sections"></div>
-  <button class="addblock" id="addSection" type="button">＋ Добавить раздел</button>
+  <div class="addrow">
+    <button class="addblock" id="addSection" type="button">＋ Раздел с аккордами</button>
+    <button class="addblock" id="addRiffSection" type="button">＋ Раздел с риффом</button>
+  </div>
 
   <div class="section-title"><span class="sec-n">02</span>Переборы<span class="hint">рисунок щипков</span></div>
   <button class="opener" id="patOpen" type="button">
@@ -411,6 +472,7 @@
 </div>
 
 <div class="footer">
+  <button class="bigbtn ghost hidden" id="restart" type="button" aria-label="Начать партию заново">⟲ Заново</button>
   <button class="bigbtn" id="start" type="button">Старт</button>
 </div>
 
@@ -439,7 +501,8 @@
     <div class="full-body">
       <div id="patterns"></div>
       <button class="addblock" id="addPattern" type="button">＋ Добавить перебор</button>
-      <p class="tab-legend">Строки — струны (6 толстая сверху, 1 тонкая снизу), столбцы — четыре щипка такта.
+      <p class="tab-legend">Строки — струны (6 толстая сверху, 1 тонкая снизу), столбцы — щипки такта:
+        четыре при четвертях, восемь при восьмых (над долями стоят цифры, между ними «и»).
         Верхняя строка «Б» — бас текущего аккорда: подставится 5-я для Am, 4-я для Dm, 6-я для E и F.</p>
     </div>
   </div>
@@ -463,6 +526,27 @@
   </div>
 </div>
 
+<!-- ===== ЛИСТ ЩИПКА РИФФА ===== -->
+<div class="modal hidden" id="riffsheet" role="dialog" aria-modal="true" aria-labelledby="riffTitle">
+  <div class="modal-card wide">
+    <div class="modal-title" id="riffTitle">Щипок</div>
+    <div class="sheet-lab first">Струна</div>
+    <div class="pickrow" id="riffStrings"></div>
+    <div class="sheet-lab">Лад</div>
+    <div class="fretrow">
+      <button id="riffFretMinus" type="button" aria-label="Лад ниже">–</button>
+      <div class="fv" id="riffFretN">—</div>
+      <button id="riffFretPlus" type="button" aria-label="Лад выше">+</button>
+      <button id="riffRest" type="button" style="flex:1; width:auto; font-size:13px">Пауза</button>
+    </div>
+    <div class="sheet-acts">
+      <button id="riffLeft" type="button">← щипок</button>
+      <button id="riffRight" type="button">щипок →</button>
+    </div>
+    <button class="sheet-close" id="riffClose" type="button">Готово</button>
+  </div>
+</div>
+
 <script>
 "use strict";
 const $ = id => document.getElementById(id);
@@ -472,12 +556,20 @@ const clampInt = (v, lo, hi, dflt) => {
 };
 
 /* ============ MODEL ============
-   Щипок = четверть, перебор из 4 щипков = один такт 4/4.
+   Такт — всегда 4/4, четыре доли. Перебор — фигура длиной в такт, разбитая
+   на 4 щипка (четвертями) или на 8 (восьмыми): пять щипков припева в четыре
+   слота не лезут, поэтому дробление задаётся на каждый перебор отдельно.
    Шаг перебора — набор струн, которые щипаются одновременно:
    [5] одна струна, [2,1] две вместе, [] пауза, ['Б'] бас текущего аккорда. */
-const STEPS_PER_BAR = 4;
+const BEATS_PER_BAR = 4;                        // долей в такте: отсчёт, пауза и точки считаются ими
+const STEP_DIVS = [4, 8];                       // допустимые дробления такта
 const BASS = 'Б';
 const STRING_ROWS = [BASS, 6, 5, 4, 3, 2, 1];   // сверху вниз: бас, затем толстая → тонкая
+/* сколько щипков в этой фигуре; битую длину приводим к ближайшему допустимому */
+const divOf = steps => (Array.isArray(steps) && steps.length === 8) ? 8 : 4;
+/* доля, на которую попадает щипок s: при восьмых каждый второй — между долями */
+const onBeat = (s, div) => (s * BEATS_PER_BAR) % div === 0;
+const beatOf = (s, div) => Math.floor(s * BEATS_PER_BAR / div);
 
 /* «5-3-(21)-3» — имя перебора не хранится, а выводится из шагов:
    нотация и есть название, ровно так о переборах и думают. */
@@ -491,16 +583,19 @@ function patternLabel(steps){
 // бас первым, дальше от толстой струны к тонкой
 const cmpString = (a,b) => (a===BASS ? -1 : b===BASS ? 1 : b-a);
 
+/* Переборы «Серебра» по разбору Гитарист ТВ. В уроке они расписаны по аккордам
+   (5-3-(21)-3 на Am, 6-3-(21)-3 на F, 4-3-(21)-3 на Dm…), но первый щипок везде —
+   бас аккорда, поэтому через «Б» одиннадцать строк урока сводятся к четырём фигурам. */
 const DEFAULT_PATTERNS = [
-  [[5],[3],[2,1],[3]],
-  [[5],[3],[2,1],[6]],
-  [[6],[3],[2,1],[3]],
-  [[4],[3],[2,1],[3]],
-  [[BASS],[3],[2,1],[3]],
-  [[BASS],[3],[2,1],[6]],
+  [[BASS],[3],[2,1],[3]],                              // Б-3-(21)-3 — вступление и куплет
+  [[BASS],[3],[2,1],[6]],                              // Б-3-(21)-6 — Am с уходом на низкое Ми
+  [[BASS,3,2,1],[],[BASS,3,2,1],[]],                   // (Б321) дважды — куплет, такты 7-8
+  [[BASS],[3,2,1],[3,2,1],[3,2,1]],                    // Б-(321)×3 — припев по уроку
+  [[BASS],[],[3],[],[2,1],[2,1],[3],[]],               // припев в пять щипков: вторая (21) на восьмой
+  [[BASS],[],[],[]],                                   // один бас — последний такт вступления
 ].map(steps => ({ steps }));
 
-const DEFAULT_CHORDS = ['Am','Dm','Dm7','E','E7','F'];
+const DEFAULT_CHORDS = ['Am','F','Dm','E','Dm7','E7','Fmaj7'];
 
 /* ============ аппликатуры аккордов ============
    струны читаются от 6-й (толстой, низкое Ми) к 1-й (тонкой):
@@ -517,6 +612,9 @@ const CHORD_SHAPES = {
   'G':  {f:[3,2,0,0,0,3],      fg:[2,1,0,0,0,3]},
   'Bm': {f:['x',2,4,4,3,2],    fg:[0,1,3,4,2,1]},
   'F':  {f:[1,3,3,2,1,1],      fg:[1,3,4,2,1,1]},
+  // на записи «Серебра» F почти всюду неполный: низкое фа на 6-й, без баррэ.
+  // Это форма Am с указательным на 6-й/1 лад — бас остаётся 6-м, как в уроке.
+  'Fmaj7':{f:[1,0,2,2,1,0],    fg:[1,0,2,3,4,0]},
   'G7': {f:[3,2,0,0,0,1],      fg:[3,2,0,0,0,1]},
   'C7': {f:['x',3,2,3,1,0],    fg:[0,3,2,4,1,0]},
   'D7': {f:['x','x',0,2,1,2],  fg:[0,0,0,2,1,3]},
@@ -595,38 +693,71 @@ function lsGet(k){ try{ return localStorage.getItem(k); }catch(e){ return null; 
 function lsSet(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
 function readJSON(k){ try{ return JSON.parse(lsGet(k)); }catch(e){ return null; } }
 
-function defaultState(){
+/* ============ пресет песни ============
+   «Серебро» Би-2 — по видеоразбору Гитарист ТВ (акустическая версия).
+   Переопределения перебора стоят только там, где урок меняет рисунок:
+   такты 1 и 5 куплета уходят на низкое Ми, такты 7-8 идут двойным (Б321).
+   Темп 86 — середина между 84 из аудио-баз и 88 у акустической версии;
+   пауза на смену аккорда 0, потому что аккорд здесь меняется каждый такт. */
+const bar = (chord, pattern) => ({ chord, pattern: (pattern === undefined ? null : pattern) });
+
+function presetSerebro(){
   return {
     schema: SCHEMA,
-    song: 'Новая песня',
+    song: 'Серебро',
     patterns: DEFAULT_PATTERNS.map(p => ({ steps: p.steps.map(st => st.slice()) })),
     chords: DEFAULT_CHORDS.slice(),
-    // разделы по умолчанию стоят на «Б-3-(21)-3»: бас подставляется из аккорда,
-    // поэтому Am, Dm и E звучат с правильной басовой струной без ручной правки
     sections: [
-      { name:'Вступление', reps:2, pattern:4, bars:[
-        {chord:'Am', pattern:null}, {chord:'Am', pattern:null},
-        {chord:'F',  pattern:null}, {chord:'E7', pattern:null} ] },
-      { name:'Куплет', reps:1, pattern:4, bars:[
-        {chord:'Am', pattern:null}, {chord:'Dm', pattern:null},
-        {chord:'E',  pattern:null}, {chord:'Am', pattern:null} ] },
+      { name:'Вступление', kind:'chords', reps:1, pattern:0, bars:[
+        bar('Am'), bar('Am'), bar('Am'), bar('Am', 5) ] },
+      { name:'Куплет', kind:'chords', reps:1, pattern:0, bars:[
+        bar('Am', 1), bar('F'), bar('Dm'), bar('E'),
+        bar('Am', 1), bar('F'), bar('Dm', 2), bar('E', 2) ] },
+      // припев — шесть тактов: Dm E Am F Dm E. Урок выписывает только четыре
+      // разных рисунка, но кольцо в песне шестистопное
+      { name:'Припев', kind:'chords', reps:1, pattern:3, bars:[
+        bar('Dm'), bar('E'), bar('Am'), bar('F'), bar('Dm'), bar('E') ] },
+      // к концу песни гармония усложняется: в припевах 2 и 3 вместо Dm/E идут Dm7/E7
+      { name:'Припев (септ.)', kind:'chords', reps:1, pattern:3, bars:[
+        bar('Dm7'), bar('E7'), bar('Am'), bar('F'), bar('Dm7'), bar('E7') ] },
     ],
-    bpm:92, met:false, count:true, loop:true, diagrams:false,
+    bpm:86, met:false, count:true, loop:true, diagrams:true,
     gap:0,                                              // доли тишины перед сменой аккорда
     ramp:{ on:false, step:4, every:4 },
   };
 }
+function defaultState(){ return presetSerebro(); }
 
 const isStringTok = t => t === BASS || (Number.isInteger(t) && t >= 1 && t <= 6);
+/* Длину рисунка приводим к допустимому дроблению: до четырёх шагов — четверти,
+   больше — восьмые, лишнее отбрасывается, недостающее добивается паузами. */
+const divFor = v => (Array.isArray(v) && v.length > 4) ? 8 : 4;
 function normSteps(v){
   if(!Array.isArray(v)) return null;
+  const div = divFor(v);
   const out = [];
-  for(let i=0;i<STEPS_PER_BAR;i++){
+  for(let i=0;i<div;i++){
     const raw = Array.isArray(v[i]) ? v[i] : [];
     const st = [];
     for(const t of raw) if(isStringTok(t) && !st.includes(t)) st.push(t);
     out.push(st.sort(cmpString));
   }
+  return out;
+}
+
+/* Нота риффа: струна 1..6 и лад 0..15, либо null — пауза. Рифф одноголосный,
+   поэтому на щипок приходится максимум одна нота. */
+function normNote(n){
+  if(!n || typeof n !== 'object') return null;
+  const s = Math.round(Number(n.s)), f = Math.round(Number(n.f));
+  if(!Number.isFinite(s) || s < 1 || s > 6) return null;
+  if(!Number.isFinite(f) || f < 0 || f > 15) return null;
+  return { s, f };
+}
+function normNotes(v){
+  const div = divFor(v);
+  const out = [];
+  for(let i=0;i<div;i++) out.push(normNote(Array.isArray(v) ? v[i] : null));
   return out;
 }
 
@@ -639,12 +770,15 @@ function sanitize(raw){
 
   st.song = (typeof raw.song === 'string' && raw.song.trim()) ? raw.song.trim().slice(0,60) : d.song;
 
-  const pats = [];
-  if(Array.isArray(raw.patterns)) for(const p of raw.patterns){
+  // Пустой перебор бессмыслен и выбрасывается — но тогда чужие ссылки обязаны
+  // переехать по карте, иначе раздел молча начинает играть соседний рисунок.
+  const pats = [], patMap = new Map();
+  if(Array.isArray(raw.patterns)) raw.patterns.forEach((p, i) => {
     const steps = normSteps(Array.isArray(p) ? p : (p && p.steps));
-    if(steps && steps.some(s => s.length)) pats.push({ steps });   // пустой перебор бессмыслен
-  }
-  st.patterns = pats.length ? pats : d.patterns;                   // хотя бы один нужен всегда
+    if(steps && steps.some(s => s.length)){ patMap.set(i, pats.length); pats.push({ steps }); }
+  });
+  const patsKept = pats.length > 0;
+  st.patterns = patsKept ? pats : d.patterns;                      // хотя бы один нужен всегда
 
   const chords = [];
   if(Array.isArray(raw.chords)) for(const c of raw.chords){
@@ -654,11 +788,26 @@ function sanitize(raw){
   }
   st.chords = (Array.isArray(raw.chords) && (chords.length || !raw.chords.length)) ? chords : d.chords;
 
-  const patIdx = v => (Number.isInteger(v) && v>=0 && v<st.patterns.length) ? v : 0;
+  const patIdx = v => {
+    if(!Number.isInteger(v) || v < 0) return 0;
+    if(!patsKept) return v < st.patterns.length ? v : 0;            // карты нет — просто зажимаем
+    const m = patMap.get(v);
+    return (m === undefined) ? 0 : m;                              // выброшенный → первый
+  };
   const secs = [];
   if(Array.isArray(raw.sections)) for(const s of raw.sections){
     if(!s || typeof s !== 'object') continue;
     const name = (typeof s.name === 'string' && s.name.trim()) ? s.name.trim().slice(0,24) : 'Раздел';
+    const reps = clampInt(s.reps, 1, 32, 1);
+    if(s.kind === 'riff'){
+      const bars = [];
+      if(Array.isArray(s.bars)) for(const b of s.bars){
+        if(!b || typeof b !== 'object') continue;
+        bars.push({ notes: normNotes(b.notes) });
+      }
+      secs.push({ name, kind:'riff', reps, pattern:0, bars });
+      continue;
+    }
     const bars = [];
     if(Array.isArray(s.bars)) for(const b of s.bars){
       if(!b || typeof b !== 'object') continue;
@@ -667,9 +816,18 @@ function sanitize(raw){
       const pattern = (b.pattern === null || b.pattern === undefined) ? null : patIdx(b.pattern);
       bars.push({ chord, pattern });
     }
-    secs.push({ name, reps: clampInt(s.reps, 1, 32, 1), pattern: patIdx(s.pattern), bars });
+    secs.push({ name, kind:'chords', reps, pattern: patIdx(s.pattern), bars });
   }
-  st.sections = (Array.isArray(raw.sections) && (secs.length || !raw.sections.length)) ? secs : d.sections;
+  if(Array.isArray(raw.sections) && (secs.length || !raw.sections.length)){
+    st.sections = secs;
+  }else{
+    // Дефолтные разделы ссылаются на дефолтные аккорды и переборы, поэтому берём их
+    // комплектом: иначе в тактах окажутся аккорды, которых нет в палитре, и ссылки
+    // на переборы, которых нет в списке.
+    st.sections = d.sections;
+    st.patterns = d.patterns;
+    for(const c of d.chords) if(!st.chords.includes(c)) st.chords.push(c);
+  }
 
   st.bpm = clampInt(raw.bpm, 40, 300, d.bpm);
   for(const k of ['met','count','loop','diagrams']) st[k] = (typeof raw[k] === 'boolean') ? raw[k] : d[k];
@@ -711,7 +869,7 @@ $('confirm').addEventListener('click',e=>{ if(e.target===$('confirm')) closeConf
 $('confirmOk').onclick=()=>{ const cb=confirmCb; closeConfirm(); if(cb) cb(); };
 
 /* ============ редактор переборов ============
-   Сетка табулатуры: строки — струны (плюс «Б» сверху), столбцы — четыре щипка.
+   Сетка табулатуры: строки — струны (плюс «Б» сверху), столбцы — щипки такта (4 или 8).
    Тап по клетке включает струну на этом щипке. */
 function renderPatterns(){
   stopAudition();
@@ -742,15 +900,31 @@ function renderPatterns(){
     }
     card.appendChild(head);
 
+    const div = divOf(pat.steps);
+    const drow=document.createElement('div'); drow.className='divrow';
+    const dl=document.createElement('div'); dl.className='dl'; dl.textContent='щипков в такте';
+    drow.appendChild(dl);
+    STEP_DIVS.forEach(n=>{
+      const b=document.createElement('button'); b.type='button';
+      b.className='divbtn'+(n===div?' on':'');
+      b.textContent = n===4 ? '4 · четвертями' : '8 · восьмыми';
+      b.setAttribute('aria-pressed', String(n===div));
+      b.onclick=()=>setPatternDiv(pi, n);
+      drow.appendChild(b);
+    });
+    card.appendChild(drow);
+
     const tab = document.createElement('div'); tab.className='tab';
+    tab.style.gridTemplateColumns = '20px repeat(' + div + ', minmax(0,1fr))';
     tab.setAttribute('role','group');
     tab.setAttribute('aria-label','Рисунок перебора '+patternLabel(pat.steps));
 
     tab.appendChild(Object.assign(document.createElement('div'), {className:'sp'}));   // угол над номерами струн
-    for(let s=0;s<STEPS_PER_BAR;s++){
+    for(let s=0;s<div;s++){
       const cl=document.createElement('div');
-      cl.className='collab'+(s===0?' strong':'');
-      cl.textContent=s+1;
+      // подписаны доли, а не щипки: при восьмых между долями стоит «и»
+      cl.className='collab'+(onBeat(s,div)?' strong':'');
+      cl.textContent = onBeat(s,div) ? String(beatOf(s,div)+1) : 'и';
       tab.appendChild(cl);
     }
 
@@ -759,13 +933,13 @@ function renderPatterns(){
       lab.className='rowlab'+(row===BASS?' bass':'');
       lab.textContent=row;
       tab.appendChild(lab);
-      for(let s=0;s<STEPS_PER_BAR;s++){
+      for(let s=0;s<div;s++){
         const c=document.createElement('button'); c.type='button';
         const on = pat.steps[s].includes(row);
         c.className='tabcell'+(on?' on':'')+(row===BASS?' bass':'');
         c.setAttribute('aria-pressed', String(on));
         c.setAttribute('aria-label', (row===BASS?'Бас аккорда':'Струна '+row)+', щипок '+(s+1));
-        c.onclick = ()=> toggleStep(pi, s, row, c, nm);
+        c.onclick = ()=> toggleStep(pi, s, row, c, nm, tab);
         tab.appendChild(c);
       }
     });
@@ -775,15 +949,47 @@ function renderPatterns(){
   syncPatOpener();
 }
 /* Переключение одной струны на одном щипке — перерисовываем только кнопку и подпись. */
-function toggleStep(pi, s, row, btn, nameEl){
-  const st = state.patterns[pi].steps[s];
+function toggleStep(pi, s, row, btn, nameEl, tabEl){
+  const steps = state.patterns[pi].steps;
+  const st = steps[s];
   const i = st.indexOf(row);
+  // Последний щипок гасить нельзя: sanitize выбросил бы такой перебор при следующей
+  // загрузке, а ссылки на него переехали бы на первый — молча и необратимо.
+  if(i>=0 && st.length===1 && steps.every(x => x===st || !x.length)){
+    toast('В переборе должен остаться хотя бы один щипок');
+    return;
+  }
   if(i>=0) st.splice(i,1); else { st.push(row); st.sort(cmpString); }
   const on = i<0;
   btn.classList.toggle('on', on);
   btn.setAttribute('aria-pressed', String(on));
-  nameEl.textContent = patternLabel(state.patterns[pi].steps);
+  const label = patternLabel(steps);
+  nameEl.textContent = label;
+  // подписи для скринридера тоже обновляем: раньше они оставались от момента рендера
+  if(tabEl) tabEl.setAttribute('aria-label','Рисунок перебора '+label);
   save(); syncPatOpener(); refreshPatternSelectors();
+}
+
+/* Смена дробления: рисунок переносится по долям, чтобы не собирать его заново.
+   4→8 раскладывает щипки на доли и вставляет паузы между ними, 8→4 оставляет
+   то, что стоит на долях, и честно предупреждает, если что-то потерялось. */
+function setPatternDiv(pi, n){
+  const pat = state.patterns[pi];
+  const was = divOf(pat.steps);
+  if(was === n) return;
+  const out = [];
+  for(let i=0;i<n;i++) out.push([]);
+  let dropped = 0;
+  pat.steps.forEach((st, s)=>{
+    if(!st.length) return;
+    if(n > was){ out[s * (n / was)] = st.slice(); return; }
+    if(onBeat(s, was)) out[s / (was / n)] = st.slice();
+    else dropped++;
+  });
+  if(!out.some(st => st.length)){ toast('Так перебор остался бы пустым'); return; }
+  pat.steps = out;
+  save(); renderPatterns(); renderSections();
+  if(dropped) toast('Щипков между долями было ' + dropped + ' — они не влезли в четверти');
 }
 function deletePattern(pi){
   if(state.patterns.length<=1) return;
@@ -791,6 +997,7 @@ function deletePattern(pi){
   const fix = v => (v===pi ? 0 : v>pi ? v-1 : v);
   state.sections.forEach(sec=>{
     sec.pattern = fix(sec.pattern);
+    if(sec.kind==='riff') return;                   // у риффа такты держат ноты, а не ссылку
     sec.bars.forEach(b=>{ if(b.pattern!==null) b.pattern = fix(b.pattern); });
   });
   save(); renderPatterns(); renderSections();
@@ -826,6 +1033,149 @@ function refreshPatternSelectors(){
 const barPattern = (sec, bar) => state.patterns[bar.pattern === null ? sec.pattern : bar.pattern]
                                  || state.patterns[0];
 
+/* ---- тело раздела с аккордами: перебор на раздел + плитки тактов ---- */
+function buildChordBody(card, sec, si){
+  const pat=document.createElement('div'); pat.className='sec-pat';
+  const pl=document.createElement('label'); pl.textContent='перебор раздела';
+  pl.htmlFor='secpat'+si; pat.appendChild(pl);
+  const psel=document.createElement('select'); psel.className='patsel'; psel.id='secpat'+si;
+  state.patterns.forEach((p,pi)=>{
+    const o=document.createElement('option'); o.value=pi; o.textContent=patternLabel(p.steps);
+    if(sec.pattern===pi) o.selected=true; psel.appendChild(o);
+  });
+  psel.onchange=()=>{ sec.pattern=+psel.value; save(); renderSections(); };
+  pat.appendChild(psel);
+  card.appendChild(pat);
+
+  const tiles=document.createElement('div'); tiles.className='tiles';
+  sec.bars.forEach((bar, bi)=>{
+    const t=document.createElement('button'); t.type='button'; t.className='tile';
+    const ch=document.createElement('span'); ch.className='ch'; ch.textContent=bar.chord||'—';
+    t.appendChild(ch);
+    if(bar.pattern!==null){
+      const ov=document.createElement('span'); ov.className='ov';
+      ov.textContent=patternLabel(state.patterns[bar.pattern].steps);
+      t.appendChild(ov);
+    }
+    t.setAttribute('aria-label','Такт '+(bi+1)+', аккорд '+(bar.chord||'нет'));
+    t.onclick=()=>openSheet(si, bi);
+    tiles.appendChild(t);
+  });
+  const add=document.createElement('button'); add.type='button'; add.className='tile add';
+  add.textContent='＋'; add.setAttribute('aria-label','Добавить такт в раздел «'+sec.name+'»');
+  add.onclick=()=>{
+    const last=sec.bars[sec.bars.length-1];
+    sec.bars.push({ chord: (last&&last.chord) || state.chords[0] || '', pattern:null });
+    save(); renderSections();
+  };
+  tiles.appendChild(add);
+  card.appendChild(tiles);
+}
+
+/* ---- тело раздела-риффа ----
+   Рифф одноголосный: на щипок максимум одна нота, заданная струной и ладом.
+   Вступление, проигрыши и концовка «Серебра» написаны именно так — это линия
+   на 1-3 струнах в районе V-XIII ладов, и перебором по струнам открытого
+   аккорда она невыразима: нужных ладов в аппликатуре просто нет. */
+function buildRiffBody(card, sec, si){
+  const div = sec.bars.length ? sec.bars[0].notes.length : 4;
+  const drow=document.createElement('div'); drow.className='divrow';
+  const dl=document.createElement('div'); dl.className='dl'; dl.textContent='щипков в такте';
+  drow.appendChild(dl);
+  STEP_DIVS.forEach(n=>{
+    const b=document.createElement('button'); b.type='button';
+    b.className='divbtn'+(n===div?' on':'');
+    b.textContent = n===4 ? '4 · четвертями' : '8 · восьмыми';
+    b.setAttribute('aria-pressed', String(n===div));
+    b.onclick=()=>setRiffDiv(si, n);
+    drow.appendChild(b);
+  });
+  card.appendChild(drow);
+
+  sec.bars.forEach((b, bi)=>{
+    const wrap=document.createElement('div'); wrap.className='riff-bar';
+    const lab=document.createElement('div'); lab.className='riff-lab';
+    lab.appendChild(document.createTextNode('такт '+(bi+1)));
+    if(sec.bars.length>1){
+      const rx=document.createElement('button'); rx.type='button'; rx.className='rx'; rx.textContent='×';
+      rx.setAttribute('aria-label','Удалить такт '+(bi+1)+' раздела «'+sec.name+'»');
+      rx.onclick=()=>{ sec.bars.splice(bi,1); save(); renderSections(); };
+      lab.appendChild(rx);
+    }
+    wrap.appendChild(lab);
+
+    const row=document.createElement('div'); row.className='rsteps';
+    row.style.gridTemplateColumns='repeat('+b.notes.length+',minmax(0,1fr))';
+    b.notes.forEach((note, s)=>{
+      const c=document.createElement('button'); c.type='button';
+      c.className='rstep'+(note?' on':'');
+      const f=document.createElement('span'); f.className='f';
+      f.textContent = note ? String(note.f) : '·';
+      c.appendChild(f);
+      if(note){
+        const sp=document.createElement('span'); sp.className='s'; sp.textContent=note.s+'-я';
+        c.appendChild(sp);
+        c.setAttribute('aria-label','Щипок '+(s+1)+': струна '+note.s+', лад '+note.f);
+      }else{
+        c.setAttribute('aria-label','Щипок '+(s+1)+': пауза');
+      }
+      c.onclick=()=>openRiffSheet(si, bi, s);
+      row.appendChild(c);
+    });
+    wrap.appendChild(row);
+    card.appendChild(wrap);
+  });
+
+  const add=document.createElement('button'); add.type='button'; add.className='addblock';
+  add.textContent='＋ Такт риффа';
+  add.onclick=()=>{
+    const n = sec.bars.length ? sec.bars[sec.bars.length-1].notes.length : 4;
+    sec.bars.push({ notes: Array.from({length:n}, ()=>null) });
+    save(); renderSections();
+  };
+  card.appendChild(add);
+
+  const hint=document.createElement('p'); hint.className='riff-hint';
+  hint.textContent='Тап по щипку — выбрать струну и лад, нота сразу звучит. Пустой щипок — пауза.';
+  card.appendChild(hint);
+}
+
+/* Дробление риффа меняется сразу у всех тактов раздела, иначе такты разъехались бы. */
+function setRiffDiv(si, n){
+  const sec=state.sections[si];
+  let dropped=0;
+  sec.bars.forEach(b=>{
+    const was=b.notes.length;
+    if(was===n) return;
+    const out=Array.from({length:n}, ()=>null);
+    b.notes.forEach((note, s)=>{
+      if(!note) return;
+      if(n>was){ out[s*(n/was)]=note; return; }
+      if(onBeat(s, was)) out[s/(was/n)]=note; else dropped++;
+    });
+    b.notes=out;
+  });
+  save(); renderSections();
+  if(dropped) toast('Нот между долями было ' + dropped + ' — они не влезли в четверти');
+}
+
+/* Глубокая копия раздела: у аккордовых и у риффовых разделов такты разной формы. */
+function duplicateSection(si){
+  const sec=state.sections[si];
+  const copy={
+    name: (sec.name + ' 2').slice(0,24),
+    kind: sec.kind==='riff' ? 'riff' : 'chords',
+    reps: sec.reps,
+    pattern: sec.pattern,
+    bars: sec.kind==='riff'
+      ? sec.bars.map(b=>({ notes: b.notes.map(n => n ? {s:n.s, f:n.f} : null) }))
+      : sec.bars.map(b=>({ chord:b.chord, pattern:b.pattern })),
+  };
+  state.sections.splice(si+1, 0, copy);
+  save(); renderSections();
+  toast('Раздел скопирован');
+}
+
 function renderSections(){
   const wrap = $('sections'); wrap.textContent='';
   state.sections.forEach((sec, si)=>{
@@ -840,6 +1190,12 @@ function renderSections(){
     handle.append(grip, ordEl);
     handle.addEventListener('pointerdown', e=>startSecDrag(e, card, si));
     head.appendChild(handle);
+
+    if(sec.kind==='riff'){
+      const kb=document.createElement('span'); kb.className='kindbadge'; kb.textContent='рифф';
+      kb.title='Раздел-рифф: ноты по струнам и ладам, а не аккорд с перебором';
+      head.appendChild(kb);
+    }
 
     const nameInp = document.createElement('input');
     nameInp.className='sec-title'; nameInp.value=sec.name; nameInp.maxLength=24;
@@ -865,6 +1221,14 @@ function renderSections(){
     plus.onclick=()=>{ sec.reps=Math.min(32,sec.reps+1); paint(); save(); };
     rep.append(minus,n,plus); head.appendChild(rep);
 
+    // Припевы 2-3 отличаются от первого двумя аккордами, куплет повторяется трижды —
+    // без копии раздела форму песни пришлось бы собирать с нуля каждый раз.
+    const dup=document.createElement('button'); dup.type='button';
+    dup.className='miniBtn dup'; dup.textContent='⧉';
+    dup.title='Дублировать раздел'; dup.setAttribute('aria-label','Дублировать раздел «'+sec.name+'»');
+    dup.onclick=()=>duplicateSection(si);
+    head.appendChild(dup);
+
     if(state.sections.length>1){
       const del=document.createElement('button'); del.type='button';
       del.className='miniBtn del'; del.textContent='×';
@@ -877,41 +1241,8 @@ function renderSections(){
     }
     card.appendChild(head);
 
-    const pat=document.createElement('div'); pat.className='sec-pat';
-    const pl=document.createElement('label'); pl.textContent='перебор раздела';
-    pl.htmlFor='secpat'+si; pat.appendChild(pl);
-    const psel=document.createElement('select'); psel.className='patsel'; psel.id='secpat'+si;
-    state.patterns.forEach((p,pi)=>{
-      const o=document.createElement('option'); o.value=pi; o.textContent=patternLabel(p.steps);
-      if(sec.pattern===pi) o.selected=true; psel.appendChild(o);
-    });
-    psel.onchange=()=>{ sec.pattern=+psel.value; save(); renderSections(); };
-    pat.appendChild(psel);
-    card.appendChild(pat);
-
-    const tiles=document.createElement('div'); tiles.className='tiles';
-    sec.bars.forEach((bar, bi)=>{
-      const t=document.createElement('button'); t.type='button'; t.className='tile';
-      const ch=document.createElement('span'); ch.className='ch'; ch.textContent=bar.chord||'—';
-      t.appendChild(ch);
-      if(bar.pattern!==null){
-        const ov=document.createElement('span'); ov.className='ov';
-        ov.textContent=patternLabel(state.patterns[bar.pattern].steps);
-        t.appendChild(ov);
-      }
-      t.setAttribute('aria-label','Такт '+(bi+1)+', аккорд '+(bar.chord||'нет'));
-      t.onclick=()=>openSheet(si, bi);
-      tiles.appendChild(t);
-    });
-    const add=document.createElement('button'); add.type='button'; add.className='tile add';
-    add.textContent='＋'; add.setAttribute('aria-label','Добавить такт в раздел «'+sec.name+'»');
-    add.onclick=()=>{
-      const last=sec.bars[sec.bars.length-1];
-      sec.bars.push({ chord: (last&&last.chord) || state.chords[0] || '', pattern:null });
-      save(); renderSections();
-    };
-    tiles.appendChild(add);
-    card.appendChild(tiles);
+    if(sec.kind==='riff') buildRiffBody(card, sec, si);
+    else buildChordBody(card, sec, si);
 
     const foot=document.createElement('div'); foot.className='sec-foot';
     const tr=document.createElement('button'); tr.type='button'; tr.className='miniBtn play grow';
@@ -927,8 +1258,14 @@ function renderSections(){
 }
 $('addSection').onclick=()=>{
   const last=state.sections[state.sections.length-1];
-  state.sections.push({ name:'Раздел '+(state.sections.length+1), reps:1,
-    pattern: last?last.pattern:0, bars:[{ chord:state.chords[0]||'', pattern:null }] });
+  state.sections.push({ name:'Раздел '+(state.sections.length+1), kind:'chords', reps:1,
+    pattern: (last && last.kind!=='riff') ? last.pattern : 0,
+    bars:[{ chord:state.chords[0]||'', pattern:null }] });
+  save(); renderSections();
+};
+$('addRiffSection').onclick=()=>{
+  state.sections.push({ name:'Рифф '+(state.sections.length+1), kind:'riff', reps:1, pattern:0,
+    bars:[{ notes:[null,null,null,null] }] });
   save(); renderSections();
 };
 function updateStart(){ $('start').disabled = !state.sections.some(s=>s.bars.length); }
@@ -1051,6 +1388,72 @@ $('sheetDel').onclick=()=>{
 $('sheetClose').onclick=closeSheet;
 $('sheet').addEventListener('click', e=>{ if(e.target===$('sheet')) closeSheet(); });
 
+/* ---- лист щипка риффа ---- */
+let riffRef=null;
+function openRiffSheet(si, bi, s){ riffRef={si,bi,s}; renderRiffSheet(); $('riffsheet').classList.remove('hidden'); }
+function closeRiffSheet(){ $('riffsheet').classList.add('hidden'); riffRef=null; }
+/* нота звучит сразу при выборе — иначе рифф с записи на слух не снять */
+function auditionNote(note){
+  if(!note) return;
+  ensureCtx();
+  if(ctx.state!=='running') ctx.resume().catch(()=>{});
+  pluck(midiToFreq(OPEN_MIDI[6-note.s] + note.f), ctx.currentTime+0.02, 0.5);
+}
+function riffBar(){
+  if(!riffRef) return null;
+  const sec=state.sections[riffRef.si];
+  return (sec && sec.kind==='riff') ? sec.bars[riffRef.bi] : null;
+}
+function renderRiffSheet(){
+  const bar=riffBar();
+  if(!bar || riffRef.s>=bar.notes.length){ closeRiffSheet(); return; }
+  const sec=state.sections[riffRef.si], note=bar.notes[riffRef.s], div=bar.notes.length;
+  $('riffTitle').textContent='Щипок '+(riffRef.s+1)+' из '+div+' · такт '+(riffRef.bi+1)+' · '+sec.name;
+
+  const sw=$('riffStrings'); sw.textContent='';
+  for(let n=6;n>=1;n--){
+    const b=document.createElement('button'); b.type='button'; b.textContent=n;
+    const sel = !!(note && note.s===n);
+    if(sel) b.className='sel';
+    b.setAttribute('aria-pressed', String(sel));
+    b.setAttribute('aria-label','Струна '+n);
+    b.onclick=()=>{
+      bar.notes[riffRef.s]={ s:n, f: note ? note.f : 0 };
+      save(); renderRiffSheet(); renderSections(); auditionNote(bar.notes[riffRef.s]);
+    };
+    sw.appendChild(b);
+  }
+  $('riffFretN').textContent = note ? String(note.f) : '—';
+  $('riffFretMinus').disabled = !note || note.f<=0;
+  $('riffFretPlus').disabled  = !note || note.f>=15;
+  $('riffRest').disabled = !note;
+  $('riffLeft').disabled  = riffRef.s===0;
+  $('riffRight').disabled = riffRef.s===div-1;
+}
+function setRiffFret(d){
+  const bar=riffBar(); if(!bar) return;
+  const note=bar.notes[riffRef.s]; if(!note) return;
+  note.f=Math.min(15, Math.max(0, note.f+d));
+  save(); renderRiffSheet(); renderSections(); auditionNote(note);
+}
+function moveRiffStep(d){
+  const bar=riffBar(); if(!bar) return;
+  const j=riffRef.s+d;
+  if(j<0 || j>=bar.notes.length) return;
+  riffRef.s=j; renderRiffSheet();
+}
+$('riffFretMinus').onclick=()=>setRiffFret(-1);
+$('riffFretPlus').onclick =()=>setRiffFret(1);
+$('riffRest').onclick=()=>{
+  const bar=riffBar(); if(!bar) return;
+  bar.notes[riffRef.s]=null;
+  save(); renderRiffSheet(); renderSections();
+};
+$('riffLeft').onclick =()=>moveRiffStep(-1);
+$('riffRight').onclick=()=>moveRiffStep(1);
+$('riffClose').onclick=closeRiffSheet;
+$('riffsheet').addEventListener('click', e=>{ if(e.target===$('riffsheet')) closeRiffSheet(); });
+
 /* ============ Аккорды ============ */
 function renderChips(){
   const wrap = $('chips'); wrap.textContent='';
@@ -1137,7 +1540,10 @@ $('gapPlus').onclick =()=>{ state.gap=Math.min(8,state.gap+1); save(); syncGap()
 /* ============ BPM ============ */
 function setBpm(v){
   state.bpm=clampInt(v, 40, 300, state.bpm);
-  $('bpm').value=state.bpm; $('bpmNum').textContent=state.bpm; $('pbpm').textContent=state.bpm;
+  $('bpm').value=state.bpm; $('bpmNum').textContent=state.bpm;
+  // во время игры цифру на экране обновляет событие 'ramp' — в момент, когда новый
+  // темп слышно, а не когда он запланирован, иначе число опережало звук
+  if(!playing) $('pbpm').textContent=state.bpm;
   save();
 }
 $('bpm').oninput=e=>setBpm(+e.target.value);
@@ -1190,6 +1596,18 @@ $('exportBtn').onclick=()=>{
   document.body.appendChild(a); a.click(); a.remove();
   setTimeout(()=>URL.revokeObjectURL(url), 1000);
   toast('Файл сохранён');
+};
+/* Пресет лежит в коде, а не только в дефолтном состоянии: у кого песня уже собрана,
+   тот иначе до разбора не доберётся — localStorage перебил бы дефолт. */
+$('presetBtn').onclick=()=>{
+  const next=presetSerebro();
+  const bars=next.sections.reduce((n,s)=>n+s.bars.length, 0);
+  askConfirm({
+    title:'Загрузить разбор «Серебра»?',
+    msg:'Текущая песня «'+state.song+'» будет заменена: '+next.sections.length+' разделов, '
+        +bars+' тактов, '+next.patterns.length+' переборов, темп '+next.bpm+'.',
+    ok:'Загрузить'
+  }, ()=>{ state=next; save(); renderAll(); toast('Разбор загружен'); });
 };
 $('importBtn').onclick=()=>$('importFile').click();
 function readFileText(f){
@@ -1262,9 +1680,10 @@ function ksBuffer(freq){
 }
 /* генерация буфера — тяжёлая синхронная работа, поэтому аккорды прогреваются заранее:
    первый — сразу, остальные короткими порциями, пока идёт отсчёт */
-function prewarm(chords){
+function prewarm(chords, extra){
   const freqs=[];
   for(const ch of chords) for(let n=6;n>=1;n--){ const f=stringFreq(ch,n); if(f) freqs.push(f); }
+  if(Array.isArray(extra)) for(const f of extra) if(f) freqs.push(f);   // ноты риффов
   const firstCount = chords.length ? [6,5,4,3,2,1].filter(n=>stringFreq(chords[0],n)).length : 0;
   let i=0;
   while(i<firstCount && i<freqs.length) ksBuffer(freqs[i++]);
@@ -1294,6 +1713,12 @@ function pickStep(time, step, chord, accent){
     pluck(f, time + i*0.004, n>=4 ? (accent?0.60:0.50) : 0.42);
   });
 }
+/* Один щипок риффа: одна нота, заданная струной и ладом напрямую, без аккорда.
+   Тем же путём звучат ноты выше аппликатуры — то, чего перебор выразить не может. */
+function pickNote(time, note, accent){
+  if(!note) return;
+  pluck(midiToFreq(OPEN_MIDI[6-note.s] + note.f), time, accent ? 0.58 : 0.50);
+}
 function metClick(time, accent){
   const o=ctx.createOscillator(), g=ctx.createGain();
   const bp=ctx.createBiquadFilter(); bp.type='bandpass'; bp.Q.value=6;
@@ -1308,6 +1733,7 @@ function metClick(time, accent){
 
 /* ============ SCHEDULER ============ */
 let playing=false;
+let bpmBeforePlay=null;           // темп до разгона: стоп возвращает его на место
 let seq=[];                       // снимок партии на время игры
 let practiceSection=null;         // индекс раздела в режиме «тренировать раздел», иначе null
 let idx=0, s=0, passes=0;         // такт / щипок в такте / пройденных кругов
@@ -1318,34 +1744,49 @@ let stopRequested=false;
 let uiQueue=[];
 const SCHEDULE_AHEAD=0.1, LOOKAHEAD=25;
 
-const stepDur = () => 60/state.bpm;                 // щипок = доля, поэтому шаг равен четверти
+const beatDur = () => 60/state.bpm;                 // доля = четверть
+const barDur  = () => BEATS_PER_BAR * beatDur();    // такт всегда 4/4
+/* Длительность щипка зависит от дробления текущего такта: при четырёх щипках это
+   четверть, при восьми — восьмая. Поэтому шаг считается от такта, а не от доли. */
+const stepDur = () => barDur() / (seq[idx] ? seq[idx].div : BEATS_PER_BAR);
 const looping = () => practiceSection!==null || state.loop;   // режим тренировки всегда по кругу
 
 /* Разворачивает песню в плоский список тактов с уже подставленными переборами:
-   правки в редакторе не могут задеть уже идущую игру. */
+   правки в редакторе не могут задеть уже идущую игру. Разделы-риффы кладут сюда
+   готовые ноты (струна + лад), аккордовые — шаги перебора и аккорд. */
 function buildSeq(practice){
   const out=[];
   const list = (practice===null) ? state.sections.map((s,i)=>[s,i]) : [[state.sections[practice], practice]];
   for(const [sec] of list){
     if(!sec || !sec.bars.length) continue;
+    const riff = sec.kind==='riff';
     for(let r=0;r<sec.reps;r++) sec.bars.forEach((bar, bi)=>{
-      out.push({
-        chord: bar.chord,
-        steps: barPattern(sec, bar).steps.map(st=>st.slice()),
+      const e = {
         secName: sec.name, secRep:r+1, secReps:sec.reps,
         barNo: bi+1, barCount: sec.bars.length,
-      });
+      };
+      if(riff){
+        e.kind='riff'; e.chord='';
+        e.notes = bar.notes.map(n => n ? {s:n.s, f:n.f} : null);
+        e.div = e.notes.length;
+      }else{
+        e.kind='chords'; e.chord = bar.chord;
+        e.steps = barPattern(sec, bar).steps.map(st=>st.slice());
+        e.div = e.steps.length;
+      }
+      out.push(e);
     });
   }
   return out;
 }
 
 function advance(){
-  if(counting>0){ nextTime += 60/state.bpm; counting--; return; }   // отсчёт идёт долями
-  if(gapLeft>0){ nextTime += 60/state.bpm; gapLeft--; return; }     // пауза тоже идёт долями
-  nextTime += stepDur();
+  if(counting>0){ nextTime += beatDur(); counting--; return; }      // отсчёт идёт долями
+  if(gapLeft>0){ nextTime += beatDur(); gapLeft--; return; }        // пауза тоже идёт долями
+  const div = seq[idx] ? seq[idx].div : BEATS_PER_BAR;
+  nextTime += barDur()/div;
   s++;
-  if(s>=STEPS_PER_BAR){
+  if(s>=div){
     s=0; idx++;
     if(idx>=seq.length){
       idx=0; passes++;
@@ -1374,8 +1815,13 @@ function rampTick(){
 // пересинхронизация: выкинуть устаревшие визуальные события и заново привязать
 // аудио-часы к текущему времени контекста — звук и подсветка снова совпадают
 function resync(){
+  const ending = stopRequested;
   uiQueue.length = 0;
   nextTime = ctx.currentTime + 0.08;
+  // Если песня уже кончилась, в очереди лежало событие конца — и только оно вызывает
+  // stopPlay(). Без этого уход во вкладку на последнем такте снова подвешивал экран
+  // игры: планировщик уже остановлен, а показать 'end' нечему.
+  if(ending) uiQueue.push({ time: nextTime, kind:'end' });
 }
 
 function scheduler(){
@@ -1385,22 +1831,27 @@ function scheduler(){
       else nextTime = ctx.currentTime + 0.05;           // лёгкий дрейф → мягкая поправка
     }
     while(nextTime < ctx.currentTime + SCHEDULE_AHEAD){
-      if(stopRequested){ uiQueue.push({time:nextTime, kind:'end'}); break; }
+      if(stopRequested) break;
       if(counting>0){
-        metClick(nextTime, counting===STEPS_PER_BAR);
+        metClick(nextTime, counting===BEATS_PER_BAR);
         uiQueue.push({time:nextTime, kind:'count', n:counting});   // обратный счёт 4,3,2,1
       }else if(gapLeft>0){
         if(state.met) metClick(nextTime, false);                   // пульс не теряется, щипка нет
         uiQueue.push({time:nextTime, kind:'gap', n:gapLeft, bi:idx});
       }else{
         const b=seq[idx], accent=(s===0);                          // акцент на первую долю такта
-        pickStep(nextTime, b.steps[s], b.chord, accent);
-        if(state.met) metClick(nextTime, accent);                  // щипок = доля, клик на каждом
+        if(b.kind==='riff') pickNote(nextTime, b.notes[s], accent);
+        else pickStep(nextTime, b.steps[s], b.chord, accent);
+        // метроном отбивает доли, а не щипки: при восьмых клик приходится только на доли
+        if(state.met && onBeat(s, b.div)) metClick(nextTime, accent);
         uiQueue.push({time:nextTime, kind:'play', bi:idx, s});
       }
       advance();
     }
-    if(stopRequested) return;   // дальше не планируем, ждём пока draw покажет 'end'
+    // advance() ставит stopRequested, уже сдвинув nextTime на целый щипок вперёд, поэтому
+    // следующего витка while не будет — событие конца кладём здесь. Внутри цикла оно
+    // не доходило до очереди никогда, и песня без зацикливания просто зависала.
+    if(stopRequested){ uiQueue.push({time:nextTime, kind:'end'}); return; }
   }else if(playing){ ctx.resume().catch(()=>{}); }
   timerId=setTimeout(scheduler,LOOKAHEAD);
 }
@@ -1424,15 +1875,28 @@ function buildStrunes(){
 }
 const stepText = (step, chord) => { const r=resolveStep(step, chord); return r.length ? r.join('') : ''; };
 
+/* Ячейки такта: в аккордовом такте это номера струн, в риффе — лады,
+   а номер струны уезжает в уголок ячейки. Восьмые идут в восемь колонок. */
 function buildPCells(entry){
   pcellsEl.textContent='';
-  entry.steps.forEach(step=>{
-    const t=stepText(step, entry.chord);
+  pcellsEl.classList.toggle('d8', entry.div===8);
+  for(let i=0;i<entry.div;i++){
+    let t='', str=0;
+    if(entry.kind==='riff'){
+      const note=entry.notes[i];
+      if(note){ t=String(note.f); str=note.s; }
+    }else{
+      t=stepText(entry.steps[i], entry.chord);
+    }
     const c=document.createElement('div');
-    c.className='cell'+(t?'':' r');
+    c.className='cell'+(t?'':' r')+(i===0 ? ' strong' : (onBeat(i, entry.div) ? '' : ' off'));
     c.textContent=t || '·';
+    if(str){
+      const sp=document.createElement('i'); sp.className='st'; sp.textContent=str;
+      c.appendChild(sp);
+    }
     pcellsEl.appendChild(c);
-  });
+  }
 }
 // блок «имя аккорда + схема» для центральной и соседних позиций
 function renderChordUnit(id, chord){
@@ -1454,6 +1918,21 @@ function nextChordOf(b){
 function litStrings(list){
   strRows.forEach((row,i)=>row.classList.toggle('on', list.includes(6-i)));
 }
+/* У риффового такта аккорда нет, поэтому схемы просто убираем: .cu:empty их скрывает,
+   а min-height у .phead держит высоту, так что колонка не прыгает. */
+function showChordUnits(bi){
+  const b=seq[bi];
+  if(b.kind==='riff'){
+    $('pcur').textContent=''; $('pprev').textContent=''; $('pnextc').textContent='';
+    return;
+  }
+  renderChordUnit('pcur', b.chord || '—');
+  renderChordUnit('pprev', prevChordOf(bi));
+  renderChordUnit('pnextc', nextChordOf(bi));
+}
+// имя тренируемого раздела: раньше первый же щипок стирал его до безымянного
+const practiceLabel = () => practiceSection!==null
+  ? 'тренируем раздел «'+state.sections[practiceSection].name+'»' : '';
 function renderEvent(ev){
   if(ev.kind==='end'){ stopPlay(); return; }
   if(ev.kind==='ramp'){
@@ -1465,15 +1944,17 @@ function renderEvent(ev){
   if(ev.kind==='gap'){
     const g=seq[ev.bi];
     buildPCells(g);                       // показываем такт, который вот-вот пойдёт
-    renderChordUnit('pcur', g.chord || '—');
-    renderChordUnit('pprev', prevChordOf(ev.bi));
+    showChordUnits(ev.bi);
     $('pnextc').textContent='';
-    $('pnext').textContent='меняй аккорд';
+    $('pnext').textContent = g.kind==='riff' ? 'переставь руку' : 'меняй аккорд';
     $('pblock').textContent = g.secName + ' · такт ' + g.barNo + '/' + g.barCount;
     strnumEl.className='stringnum r';
     strnumEl.textContent=String(ev.n);
     litStrings([]);
-    Array.from(beatsEl.children).forEach((x,i)=>x.classList.toggle('on', i<ev.n));
+    // точек всего четыре, а пауза бывает до восьми долей: показываем остаток по кругу,
+    // иначе первую половину длинной паузы индикатор стоял бы зажжённым целиком
+    const lit = ((ev.n - 1) % BEATS_PER_BAR) + 1;
+    Array.from(beatsEl.children).forEach((x,i)=>x.classList.toggle('on', i<lit));
     lastBi=-1;                            // первый щипок такта перерисует всё как надо
     return;
   }
@@ -1490,21 +1971,30 @@ function renderEvent(ev){
   if(ev.bi!==lastBi){
     lastBi=ev.bi;
     buildPCells(b);
-    renderChordUnit('pcur', b.chord || '—');
-    renderChordUnit('pprev', prevChordOf(ev.bi));
-    renderChordUnit('pnextc', nextChordOf(ev.bi));
-    $('pnext').textContent = practiceSection!==null ? 'тренируем раздел' : '';
+    showChordUnits(ev.bi);
+    $('pnext').textContent = b.kind==='riff' ? 'рифф' : practiceLabel();
     $('pblock').textContent = b.secName + ' · такт ' + b.barNo + '/' + b.barCount
       + (b.secReps>1 ? ' · проход ' + b.secRep + '/' + b.secReps : '');
   }
   const cells=Array.from(pcellsEl.children);
   cells.forEach((c,i)=>c.classList.toggle('live', i===ev.s));
-  const res=resolveStep(b.steps[ev.s], b.chord);
-  strnumEl.textContent = res.length ? res.join('') : '';
-  strnumEl.className = 'stringnum ' + (res.length ? '' : 'r ') + 'pulse';
+  // в риффе крупно показывается лад, а струну видно по подсветке; в аккорде — номера струн
+  let res, big;
+  if(b.kind==='riff'){
+    const note=b.notes[ev.s];
+    res = note ? [note.s] : [];
+    big = note ? String(note.f) : '';
+  }else{
+    res = resolveStep(b.steps[ev.s], b.chord);
+    big = res.length ? res.join('') : '';
+  }
+  strnumEl.textContent = big;
+  strnumEl.className = 'stringnum ' + (big ? '' : 'r ') + 'pulse';
   requestAnimationFrame(()=>strnumEl.classList.remove('pulse'));
   litStrings(res);
-  Array.from(beatsEl.children).forEach((x,i)=>x.classList.toggle('on', i===ev.s));
+  // точки — доли такта, а не щипки: при восьмых две соседние ячейки светят одну долю
+  const beat = beatOf(ev.s, b.div);
+  Array.from(beatsEl.children).forEach((x,i)=>x.classList.toggle('on', i===beat));
   if(ev.s===0){
     const f=$('flash'); f.style.transition='none'; f.style.opacity='0.12';
     requestAnimationFrame(()=>{ f.style.transition='opacity .25s'; f.style.opacity='0'; });
@@ -1512,7 +2002,9 @@ function renderEvent(ev){
 }
 function draw(){
   while(uiQueue.length && uiQueue[0].time <= ctx.currentTime) renderEvent(uiQueue.shift());
-  rafId=requestAnimationFrame(draw);
+  // событие 'end' вызывает stopPlay() прямо отсюда, а он отменяет текущий кадр —
+  // без этой проверки мы тут же просили бы следующий и rAF крутился бы вхолостую
+  if(playing) rafId=requestAnimationFrame(draw);
 }
 
 /* ============ прослушивание одного перебора ============ */
@@ -1531,6 +2023,7 @@ function auditionPattern(pi, btn){
   ensureCtx();
   if(ctx.state!=='running') ctx.resume().catch(()=>{});
   const steps=state.patterns[pi].steps.map(st=>st.slice());
+  const div=divOf(steps), dur=barDur()/div;   // длительность щипка — от дробления этой фигуры
   const demoChord=state.chords.find(c=>CHORD_SHAPES[c]) || 'Am';
   prewarm([demoChord]);
   audIdx=pi;
@@ -1538,10 +2031,11 @@ function auditionPattern(pi, btn){
   let t=ctx.currentTime+0.08, i=0;
   const step=()=>{
     if(audIdx!==pi) return;
-    pickStep(t, steps[i%STEPS_PER_BAR], demoChord, i%STEPS_PER_BAR===0);
-    if(state.met) metClick(t, i%STEPS_PER_BAR===0);
-    t+=stepDur(); i++;
-    if(i>=STEPS_PER_BAR*2){   // два такта, кнопка гаснет когда отзвучит последний щипок
+    const k=i%div;
+    pickStep(t, steps[k], demoChord, k===0);
+    if(state.met && onBeat(k, div)) metClick(t, k===0);
+    t+=dur; i++;
+    if(i>=div*2){             // два такта, кнопка гаснет когда отзвучит последний щипок
       audTimer=setTimeout(()=>{ if(audIdx===pi) stopAudition(); }, Math.max(0,(t-ctx.currentTime)*1000));
       return;
     }
@@ -1568,6 +2062,36 @@ document.addEventListener('visibilitychange',()=>{
 document.addEventListener('pointerdown',()=>{ if(playing) resumeAudio(); }, {passive:true});
 
 /* ============ start / stop ============ */
+/* Ставит партию в начало и приводит экран игры в исходный вид.
+   Общее для «Старта» и для «Заново», чтобы два пути не разъехались. */
+function armFromStart(){
+  idx=0; s=0; passes=0; gapLeft=0; lastBi=-1; stopRequested=false;
+  uiQueue.length=0;
+  counting = state.count ? BEATS_PER_BAR : 0;   // один такт отсчёта
+  buildPCells(seq[0]);
+  if(state.count){ renderChordUnit('pcur', String(BEATS_PER_BAR)); $('pprev').textContent=''; $('pnextc').textContent=''; }
+  else showChordUnits(0);
+  $('pnext').textContent = practiceSection!==null ? practiceLabel()
+                         : (seq[0].kind==='riff' ? 'рифф' : '');
+  $('pblock').textContent=''; $('prampMark').textContent='';
+  $('pbpm').textContent=state.bpm;
+  strnumEl.className='stringnum r'; strnumEl.textContent=''; litStrings([]);
+  Array.from(beatsEl.children).forEach(x=>x.classList.remove('on'));
+}
+
+/* «Заново» — та же партия с начала, не выходя в конструктор. Снимок seq не
+   пересобирается: правки в редакторе по-прежнему не достают до идущей игры. */
+function restartPlay(){
+  if(!playing) return;
+  // разогнанный темп откатывается тоже, иначе «заново» шло бы с набранного
+  if(bpmBeforePlay!==null && state.bpm!==bpmBeforePlay) setBpm(bpmBeforePlay);
+  armFromStart();
+  // планировщик мог уже встать на конце песни, а кадр — быть в полёте
+  clearTimeout(timerId); cancelAnimationFrame(rafId);
+  nextTime = ctx.currentTime + 0.12;
+  scheduler(); draw();
+}
+
 async function startPlay(practice){
   if(playing) return;
   const p = (typeof practice==='number' && state.sections[practice] && state.sections[practice].bars.length)
@@ -1581,23 +2105,24 @@ async function startPlay(practice){
 
   seq = snapshot;
   const uniq=[]; for(const b of seq) if(b.chord && !uniq.includes(b.chord)) uniq.push(b.chord);
-  prewarm(uniq);
+  // ноты риффов прогреваются вместе с аккордами, иначе первый щипок риффа
+  // синхронно считает буфер прямо в тике планировщика
+  const riffFreqs=[];
+  for(const b of seq) if(b.kind==='riff') for(const nt of b.notes){
+    if(!nt) continue;
+    const f=midiToFreq(OPEN_MIDI[6-nt.s]+nt.f);
+    if(!riffFreqs.includes(f)) riffFreqs.push(f);
+  }
+  prewarm(uniq, riffFreqs);
 
-  idx=0; s=0; passes=0; gapLeft=0; lastBi=-1; uiQueue=[]; stopRequested=false;
-  counting = state.count ? STEPS_PER_BAR : 0;   // один такт отсчёта
-
-  beatsEl.textContent=''; for(let i=0;i<STEPS_PER_BAR;i++) beatsEl.appendChild(document.createElement('i'));
-  buildPCells(seq[0]);
-  if(state.count){ renderChordUnit('pcur', String(STEPS_PER_BAR)); $('pprev').textContent=''; $('pnextc').textContent=''; }
-  else { renderChordUnit('pcur', seq[0].chord||'—'); renderChordUnit('pprev', prevChordOf(0)); renderChordUnit('pnextc', nextChordOf(0)); }
-  $('pnext').textContent = p!==null ? 'тренируем раздел «'+state.sections[p].name+'»' : '';
-  $('pblock').textContent=''; $('prampMark').textContent='';
-  $('pbpm').textContent=state.bpm;
-  strnumEl.className='stringnum r'; strnumEl.textContent=''; litStrings([]);
+  bpmBeforePlay = state.bpm;                    // разгон поднимет темп, стоп вернёт как было
+  beatsEl.textContent=''; for(let i=0;i<BEATS_PER_BAR;i++) beatsEl.appendChild(document.createElement('i'));
+  armFromStart();
 
   playing=true;
   $('setup').classList.add('hidden'); $('play').classList.remove('hidden');
   const sb=$('start'); sb.textContent='■ Стоп'; sb.classList.add('stop'); sb.disabled=false;
+  $('restart').classList.remove('hidden');
   keepAwake(true);
 
   clearTimeout(timerId); cancelAnimationFrame(rafId);   // гасим прежние циклы, чтобы не было двойного планировщика
@@ -1611,16 +2136,27 @@ function stopPlay(){
   uiQueue.length=0;
   $('play').classList.add('hidden'); $('setup').classList.remove('hidden');
   const sb=$('start'); sb.textContent='▶ Старт'; sb.classList.remove('stop');
+  $('restart').classList.add('hidden');
   keepAwake(false);
+  // Разгон менял state.bpm и писал его в хранилище, а исходный темп нигде не лежал:
+  // после долгой тренировки страница открывалась сразу на разогнанном.
+  if(bpmBeforePlay!==null && state.bpm!==bpmBeforePlay){
+    const was=state.bpm;
+    setBpm(bpmBeforePlay);
+    toast('Разогнались до ' + was + ' — темп вернулся на ' + bpmBeforePlay);
+  }
+  bpmBeforePlay=null;
   updateStart();
 }
 $('start').onclick=()=>{ playing?stopPlay():startPlay(null); };
+$('restart').onclick=restartPlay;
 
 /* ============ клавиатура ============ */
 document.addEventListener('keydown', e=>{
   if(e.key==='Escape'){
-    // сверху вниз по слоям: подтверждение и лист лежат над экраном переборов
+    // сверху вниз по слоям: подтверждение и листы лежат над экраном переборов
     if(!$('confirm').classList.contains('hidden')){ closeConfirm(); return; }
+    if(!$('riffsheet').classList.contains('hidden')){ closeRiffSheet(); return; }
     if(!$('sheet').classList.contains('hidden')){ closeSheet(); return; }
     if(!$('patmenu').classList.contains('hidden')) closePatMenu();
     return;
@@ -1629,6 +2165,7 @@ document.addEventListener('keydown', e=>{
     const t=e.target;
     if(t && (t.isContentEditable || /^(INPUT|SELECT|TEXTAREA|BUTTON|A)$/.test(t.tagName))) return;
     if(!$('confirm').classList.contains('hidden') || !$('sheet').classList.contains('hidden')
+       || !$('riffsheet').classList.contains('hidden')
        || !$('patmenu').classList.contains('hidden')) return;
     e.preventDefault();
     playing ? stopPlay() : startPlay(null);
