@@ -344,6 +344,18 @@
   .sheet-acts button.warn:hover{color:var(--danger); border-color:color-mix(in oklch, var(--danger) 45%, transparent);}
   .sheet-close{width:100%; margin-top:9px; background:var(--panel2); border:1px solid var(--line); color:var(--text); border-radius:11px;
     padding:13px; font-size:14px; font-weight:700; cursor:pointer; font-family:var(--font);}
+  /* строка шаблона песни */
+  .tplrow{width:100%; display:flex; align-items:center; gap:11px; margin-bottom:8px;
+    background:var(--panel2); border:1px solid var(--line); border-radius:var(--control-radius);
+    padding:12px 13px; cursor:pointer; font-family:var(--font); color:var(--text); text-align:left;}
+  .tplrow:hover{border-color:var(--accent-line);}
+  .tplrow:active{transform:translateY(1px);}
+  .tplrow .t{flex:1; min-width:0;}
+  .tplrow .nm{display:block; font-family:var(--display); font-size:15px; font-weight:700; letter-spacing:.2px;}
+  .tplrow .nm small{font-family:var(--font); font-size:11.5px; font-weight:600; color:var(--faint); margin-left:6px; letter-spacing:0;}
+  .tplrow .sub{display:block; font-family:var(--mono); font-size:10.5px; font-weight:700;
+    color:var(--faint); margin-top:4px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .tplrow .arr{flex:0 0 auto; color:var(--accent); font-size:19px; font-weight:700; line-height:1;}
 
   /* ---- toast ---- */
   .toast{position:fixed; left:50%; bottom:calc(84px + env(safe-area-inset-bottom)); transform:translateX(-50%) translateY(8px); z-index:140;
@@ -377,10 +389,6 @@
 <div class="screen" id="setup">
 
   <div class="section-title main"><span class="sec-n">01</span>Песня<span class="hint">разделы и такты</span></div>
-  <button class="opener" id="presetBtn" type="button">
-    <span class="t">Загрузить «Серебро» целиком<em>вступление, куплет и два припева — заменит собранное</em></span>
-    <span class="arr" aria-hidden="true">↻</span>
-  </button>
   <div id="sections"></div>
   <div class="addrow">
     <button class="addblock" id="addSection" type="button">＋ Раздел с аккордами</button>
@@ -442,7 +450,10 @@
     </div>
   </div>
 
-  <div class="section-title"><span class="sec-n">05</span>Сохранение<span class="hint">файл с настройками</span></div>
+  <div class="section-title"><span class="sec-n">05</span>Сохранение<span class="hint">шаблоны и файл</span></div>
+  <div class="datarow">
+    <button id="tplBtn" type="button">Загрузить из шаблона</button>
+  </div>
   <div class="datarow">
     <button id="exportBtn" type="button">Сохранить в файл</button>
     <button id="importBtn" type="button">Загрузить из файла</button>
@@ -544,6 +555,16 @@
       <button id="riffRight" type="button">щипок →</button>
     </div>
     <button class="sheet-close" id="riffClose" type="button">Готово</button>
+  </div>
+</div>
+
+<!-- ===== ШАБЛОНЫ ПЕСЕН ===== -->
+<div class="modal hidden" id="tplsheet" role="dialog" aria-modal="true" aria-labelledby="tplTitle">
+  <div class="modal-card wide">
+    <div class="modal-title" id="tplTitle">Шаблоны</div>
+    <div class="modal-msg">Готовый разбор заменит всё, что собрано сейчас.</div>
+    <div id="tplList"></div>
+    <button class="sheet-close" id="tplClose" type="button">Отмена</button>
   </div>
 </div>
 
@@ -1522,8 +1543,13 @@ $('optCount').onclick=()=>{ state.count=!state.count; save(); syncOpts(); };
 $('optLoop').onclick=()=>{ state.loop=!state.loop; save(); syncOpts(); };
 
 /* ---- пауза на смену аккорда ---- */
-const beatWord = n => (n%100>=11 && n%100<=14) ? 'долей'
-                    : n%10===1 ? 'доля' : (n%10>=2 && n%10<=4) ? 'доли' : 'долей';
+/* склонение после числа: 1 такт, 2 такта, 5 тактов */
+const plural = (n, one, few, many) => (n%100>=11 && n%100<=14) ? many
+  : n%10===1 ? one : (n%10>=2 && n%10<=4) ? few : many;
+const beatWord = n => plural(n, 'доля', 'доли', 'долей');
+const barWord  = n => plural(n, 'такт', 'такта', 'тактов');
+const secWord  = n => plural(n, 'раздел', 'раздела', 'разделов');
+const patWord  = n => plural(n, 'перебор', 'перебора', 'переборов');
 function syncGap(){
   const g=state.gap;
   $('gapN').textContent=g;
@@ -1597,18 +1623,55 @@ $('exportBtn').onclick=()=>{
   setTimeout(()=>URL.revokeObjectURL(url), 1000);
   toast('Файл сохранён');
 };
-/* Пресет лежит в коде, а не только в дефолтном состоянии: у кого песня уже собрана,
-   тот иначе до разбора не доберётся — localStorage перебил бы дефолт. */
-$('presetBtn').onclick=()=>{
-  const next=presetSerebro();
-  const bars=next.sections.reduce((n,s)=>n+s.bars.length, 0);
-  askConfirm({
-    title:'Загрузить разбор «Серебра»?',
-    msg:'Текущая песня «'+state.song+'» будет заменена: '+next.sections.length+' разделов, '
-        +bars+' тактов, '+next.patterns.length+' переборов, темп '+next.bpm+'.',
-    ok:'Загрузить'
-  }, ()=>{ state=next; save(); renderAll(); toast('Разбор загружен'); });
+/* ============ шаблоны песен ============
+   Готовый разбор лежит в коде, а не только в дефолтном состоянии: у кого песня
+   уже собрана, тот иначе до шаблона не доберётся — localStorage перебил бы дефолт.
+   Список, а не одна кнопка, чтобы следующий разбор добавлялся строкой. */
+const TEMPLATES = [
+  { name:'Серебро', artist:'Би-2', build: presetSerebro },
+];
+
+const tplSummary = st => {
+  const bars = st.sections.reduce((n,s)=>n+s.bars.length, 0);
+  return st.chords.slice(0,4).join(' · ') + ' · ' + st.bpm + ' BPM · '
+       + st.sections.length + ' разд. · ' + bars + ' ' + barWord(bars);
 };
+
+function renderTplList(){
+  const wrap=$('tplList'); wrap.textContent='';
+  TEMPLATES.forEach(tpl=>{
+    const b=document.createElement('button'); b.type='button'; b.className='tplrow';
+    const t=document.createElement('span'); t.className='t';
+    const nm=document.createElement('span'); nm.className='nm'; nm.textContent=tpl.name;
+    if(tpl.artist){ const sm=document.createElement('small'); sm.textContent=tpl.artist; nm.appendChild(sm); }
+    const sub=document.createElement('span'); sub.className='sub'; sub.textContent=tplSummary(tpl.build());
+    t.append(nm, sub);
+    const arr=document.createElement('span'); arr.className='arr';
+    arr.textContent='›'; arr.setAttribute('aria-hidden','true');
+    b.append(t, arr);
+    b.setAttribute('aria-label','Загрузить шаблон «'+tpl.name+'»'+(tpl.artist ? ', '+tpl.artist : ''));
+    b.onclick=()=>loadTemplate(tpl);
+    wrap.appendChild(b);
+  });
+}
+function openTplSheet(){ renderTplList(); $('tplsheet').classList.remove('hidden'); $('tplClose').focus(); }
+function closeTplSheet(){ $('tplsheet').classList.add('hidden'); }
+function loadTemplate(tpl){
+  const next=tpl.build();
+  const bars=next.sections.reduce((n,s)=>n+s.bars.length, 0);
+  closeTplSheet();                 // подтверждение лежит в том же слое, иначе видны оба листа
+  askConfirm({
+    title:'Загрузить «'+tpl.name+'»?',
+    msg:'Текущая песня «'+state.song+'» будет заменена: '
+        +next.sections.length+' '+secWord(next.sections.length)+', '
+        +bars+' '+barWord(bars)+', '
+        +next.patterns.length+' '+patWord(next.patterns.length)+', темп '+next.bpm+'.',
+    ok:'Загрузить'
+  }, ()=>{ state=next; save(); renderAll(); toast('Шаблон «'+tpl.name+'» загружен'); });
+}
+$('tplBtn').onclick=openTplSheet;
+$('tplClose').onclick=closeTplSheet;
+$('tplsheet').addEventListener('click', e=>{ if(e.target===$('tplsheet')) closeTplSheet(); });
 $('importBtn').onclick=()=>$('importFile').click();
 function readFileText(f){
   if(f.text) return f.text();
@@ -1626,7 +1689,9 @@ $('importFile').onchange=async e=>{
   askConfirm({
     title:'Заменить настройки?',
     msg:'Текущая песня «'+state.song+'» будет заменена на «'+next.song+'»: '
-        +next.sections.length+' разделов, '+bars+' тактов, '+next.patterns.length+' переборов.',
+        +next.sections.length+' '+secWord(next.sections.length)+', '
+        +bars+' '+barWord(bars)+', '
+        +next.patterns.length+' '+patWord(next.patterns.length)+'.',
     ok:'Заменить'
   }, ()=>{ state = next; save(); renderAll(); toast('Загружено'); });
 };
@@ -2157,6 +2222,7 @@ document.addEventListener('keydown', e=>{
     // сверху вниз по слоям: подтверждение и листы лежат над экраном переборов
     if(!$('confirm').classList.contains('hidden')){ closeConfirm(); return; }
     if(!$('riffsheet').classList.contains('hidden')){ closeRiffSheet(); return; }
+    if(!$('tplsheet').classList.contains('hidden')){ closeTplSheet(); return; }
     if(!$('sheet').classList.contains('hidden')){ closeSheet(); return; }
     if(!$('patmenu').classList.contains('hidden')) closePatMenu();
     return;
@@ -2165,7 +2231,7 @@ document.addEventListener('keydown', e=>{
     const t=e.target;
     if(t && (t.isContentEditable || /^(INPUT|SELECT|TEXTAREA|BUTTON|A)$/.test(t.tagName))) return;
     if(!$('confirm').classList.contains('hidden') || !$('sheet').classList.contains('hidden')
-       || !$('riffsheet').classList.contains('hidden')
+       || !$('riffsheet').classList.contains('hidden') || !$('tplsheet').classList.contains('hidden')
        || !$('patmenu').classList.contains('hidden')) return;
     e.preventDefault();
     playing ? stopPlay() : startPlay(null);
