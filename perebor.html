@@ -617,7 +617,7 @@ const DEFAULT_PATTERNS = [
   [[BASS],[],[],[]],                                   // один бас — последний такт вступления
 ].map(steps => ({ steps }));
 
-const DEFAULT_CHORDS = ['Am','F','Dm','E','Dm7','E7','Fmaj7'];
+const DEFAULT_CHORDS = ['Am','F','Dm','E'];
 
 /* ============ аппликатуры аккордов ============
    струны читаются от 6-й (толстой, низкое Ми) к 1-й (тонкой):
@@ -634,8 +634,6 @@ const CHORD_SHAPES = {
   'G':  {f:[3,2,0,0,0,3],      fg:[2,1,0,0,0,3]},
   'Bm': {f:['x',2,4,4,3,2],    fg:[0,1,3,4,2,1]},
   'F':  {f:[1,3,3,2,1,1],      fg:[1,3,4,2,1,1]},
-  // на записи «Серебра» F почти всюду неполный: низкое фа на 6-й, без баррэ.
-  // Это форма Am с указательным на 6-й/1 лад — бас остаётся 6-м, как в уроке.
   'Fmaj7':{f:[1,0,2,2,1,0],    fg:[1,0,2,3,4,0]},
   'G7': {f:[3,2,0,0,0,1],      fg:[3,2,0,0,0,1]},
   'C7': {f:['x',3,2,3,1,0],    fg:[0,3,2,4,1,0]},
@@ -716,15 +714,24 @@ function lsSet(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
 function readJSON(k){ try{ return JSON.parse(lsGet(k)); }catch(e){ return null; } }
 
 /* ============ пресет песни ============
-   «Серебро» Би-2 — по видеоразбору Гитарист ТВ (акустическая версия),
-   куплет уточнён по схеме преподавателя: три круга Am F Dm E.
-   Такты 1, 5 и 9 куплета уходят на низкое Ми, такты 11-12 идут двойным (Б321).
+   «Серебро» Би-2 — по видеоразбору Гитарист ТВ:
+   https://www.youtube.com/watch?v=EB3v8czcufo
+   Порядок исполнения: вступление, куплет 1, припев 1, куплет 2, припев 2.
+   В уроке используются только Am, F, Dm и E — без септаккордов.
+   Куплет — две половины по три круга Am F Dm E; сохраняем согласованный
+   с преподавателем 12-тактовый блок с повтором ×2.
+   В каждом блоке такты 1, 5 и 9 уходят на низкое Ми, 11-12 идут двойным (Б321).
    Оба припева — восемь восьмых шагов: Б-·-(321)-·-(321)-·-·-(321).
-   Темп 86 — середина между 84 из аудио-баз и 88 у акустической версии;
-   пауза на смену аккорда 0, потому что аккорд здесь меняется каждый такт. */
+   Стартовый учебный темп — 86, пауза на смену аккорда выключена. */
 const bar = (chord, pattern) => ({ chord, pattern: (pattern === undefined ? null : pattern) });
 
 function presetSerebro(){
+  const verse = name => ({ name, kind:'chords', reps:2, pattern:0, bars:[
+    bar('Am', 1), bar('F'), bar('Dm'), bar('E'),
+    bar('Am', 1), bar('F'), bar('Dm'), bar('E'),
+    bar('Am', 1), bar('F'), bar('Dm', 2), bar('E', 2) ] });
+  const chorus = name => ({ name, kind:'chords', reps:1, pattern:3, bars:[
+    bar('Dm'), bar('E'), bar('Am'), bar('F'), bar('Dm'), bar('E') ] });
   return {
     schema: SCHEMA,
     song: 'Серебро',
@@ -733,17 +740,10 @@ function presetSerebro(){
     sections: [
       { name:'Вступление', kind:'chords', reps:1, pattern:0, bars:[
         bar('Am'), bar('Am'), bar('Am'), bar('Am', 5) ] },
-      { name:'Куплет', kind:'chords', reps:1, pattern:0, bars:[
-        bar('Am', 1), bar('F'), bar('Dm'), bar('E'),
-        bar('Am', 1), bar('F'), bar('Dm'), bar('E'),
-        bar('Am', 1), bar('F'), bar('Dm', 2), bar('E', 2) ] },
-      // припев — шесть тактов: Dm E Am F Dm E. Урок выписывает только четыре
-      // разных рисунка, но кольцо в песне шестистопное
-      { name:'Припев', kind:'chords', reps:1, pattern:3, bars:[
-        bar('Dm'), bar('E'), bar('Am'), bar('F'), bar('Dm'), bar('E') ] },
-      // к концу песни гармония усложняется: в припевах 2 и 3 вместо Dm/E идут Dm7/E7
-      { name:'Припев (септ.)', kind:'chords', reps:1, pattern:3, bars:[
-        bar('Dm7'), bar('E7'), bar('Am'), bar('F'), bar('Dm7'), bar('E7') ] },
+      verse('Куплет 1'),
+      chorus('Припев 1'),
+      verse('Куплет 2'),
+      chorus('Припев 2'),
     ],
     bpm:86, met:false, count:true, loop:true, diagrams:true,
     gap:0,                                              // доли тишины перед сменой аккорда
@@ -1245,8 +1245,7 @@ function renderSections(){
     plus.onclick=()=>{ sec.reps=Math.min(32,sec.reps+1); paint(); save(); };
     rep.append(minus,n,plus); head.appendChild(rep);
 
-    // Припевы 2-3 отличаются от первого двумя аккордами, куплет повторяется трижды —
-    // без копии раздела форму песни пришлось бы собирать с нуля каждый раз.
+    // Повторяющиеся части можно скопировать целиком и затем отредактировать.
     const dup=document.createElement('button'); dup.type='button';
     dup.className='miniBtn dup'; dup.textContent='⧉';
     dup.title='Дублировать раздел'; dup.setAttribute('aria-label','Дублировать раздел «'+sec.name+'»');
@@ -1634,8 +1633,9 @@ const TEMPLATES = [
   { name:'Серебро', artist:'Би-2', build: presetSerebro },
 ];
 
+const totalBars = st => st.sections.reduce((n,s)=>n+s.bars.length*s.reps, 0);
 const tplSummary = st => {
-  const bars = st.sections.reduce((n,s)=>n+s.bars.length, 0);
+  const bars = totalBars(st);
   return st.chords.slice(0,4).join(' · ') + ' · ' + st.bpm + ' BPM · '
        + st.sections.length + ' разд. · ' + bars + ' ' + barWord(bars);
 };
@@ -1661,7 +1661,7 @@ function openTplSheet(){ renderTplList(); $('tplsheet').classList.remove('hidden
 function closeTplSheet(){ $('tplsheet').classList.add('hidden'); }
 function loadTemplate(tpl){
   const next=tpl.build();
-  const bars=next.sections.reduce((n,s)=>n+s.bars.length, 0);
+  const bars=totalBars(next);
   closeTplSheet();                 // подтверждение лежит в том же слое, иначе видны оба листа
   askConfirm({
     title:'Загрузить «'+tpl.name+'»?',
@@ -1688,7 +1688,7 @@ $('importFile').onchange=async e=>{
   try{ raw = JSON.parse(await readFileText(f)); }catch(err){}
   if(!raw || typeof raw!=='object' || Array.isArray(raw)){ toast('Не похоже на файл настроек'); return; }
   const next = sanitize(raw);
-  const bars = next.sections.reduce((n,s)=>n+s.bars.length, 0);
+  const bars = totalBars(next);
   askConfirm({
     title:'Заменить настройки?',
     msg:'Текущая песня «'+state.song+'» будет заменена на «'+next.song+'»: '
