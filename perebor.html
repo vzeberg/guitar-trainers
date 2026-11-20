@@ -706,8 +706,12 @@ function chordDiagram(name){
 }
 
 /* ============ persisted state ============ */
-const STORE = 'guitar-trainer:perebor:v1';
-const SCHEMA = 1;
+// У прямой ссылки на эту редакцию шаблона своя рабочая копия.
+const serebroEdition = 'serebro-20261120';
+const STORE = new URLSearchParams(location.search).get('template') === serebroEdition
+  ? 'guitar-trainer:perebor:' + serebroEdition
+  : 'guitar-trainer:perebor:v1';
+const SCHEMA = 2;
 
 function lsGet(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }
 function lsSet(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
@@ -863,9 +867,42 @@ function sanitize(raw){
   return st;
 }
 
+// Старые версии сохраняли весь шаблон даже при первом открытии страницы.
+// Меняем только ссылки в узнаваемых припевах; исходные рисунки могут играть в других разделах.
+function upgradeSavedSerebroChoruses(st){
+  if(st.song !== 'Серебро') return;
+  const oldRhythms = [
+    'Б-(321)-(321)-(321)',
+    'Б-·-·-(321)-(321)-·-·-(321)',
+    'Б-·-(321)-·-(321)-·-·-(321)',
+    'Б-·-(321)-(321)-·-·-(321)-·',
+  ];
+  const template = presetSerebro();
+  const chorus = template.sections.find(s => s.name === 'Припев 1');
+  function savedPatternIndex(index){
+    const pattern = template.patterns[index];
+    const label = patternLabel(pattern.steps);
+    const existing = st.patterns.findIndex(p => patternLabel(p.steps) === label);
+    if(existing !== -1) return existing;
+    st.patterns.push(pattern);
+    return st.patterns.length - 1;
+  }
+  for(const sec of st.sections){
+    if(sec.kind !== 'chords' || !/^Припев(?: [12])?$/.test(sec.name)) continue;
+    if(!oldRhythms.includes(patternLabel(st.patterns[sec.pattern].steps))) continue;
+    if(sec.bars.length !== chorus.bars.length ||
+       !sec.bars.every((b,i) => b.chord === chorus.bars[i].chord && b.pattern === null)) continue;
+    sec.pattern = savedPatternIndex(chorus.pattern);
+    sec.bars.at(-1).pattern = savedPatternIndex(chorus.bars.at(-1).pattern);
+  }
+}
+
 function load(){
   const stored = readJSON(STORE);
-  return stored ? sanitize(stored) : defaultState();
+  if(!stored) return defaultState();
+  const st = sanitize(stored);
+  if(stored.schema === 1) upgradeSavedSerebroChoruses(st);
+  return st;
 }
 let state = load();
 function save(){ lsSet(STORE, JSON.stringify(state)); }
