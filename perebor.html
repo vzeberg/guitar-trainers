@@ -310,8 +310,16 @@
   .beats{display:flex; gap:12px; justify-content:center; margin:8px 0 4px;}
   .beats i{width:11px; height:11px; border-radius:50%; background:var(--line); transition:background .06s, box-shadow .06s;}
   .beats i.on{background:var(--accent); box-shadow:0 0 10px color-mix(in oklch, var(--accent) 70%, transparent);}
-  .pbpm{font-family:var(--mono); font-size:13px; color:var(--muted); font-weight:700; margin-top:10px; letter-spacing:.5px;}
-  .pbpm b{color:var(--accent);}
+  .play-tempo{flex:none; width:100%; max-width:400px; margin:0; padding:6px 16px; justify-content:center;}
+  #play.hidden + .play-tempo{display:none;}
+  .play-tempo button{flex:none;}
+  .play-tempo button:disabled{opacity:.4;}
+  .play-tempo label{position:relative; min-width:7ch; white-space:nowrap; font:700 14px var(--mono); color:var(--text);}
+  .play-tempo label b{position:absolute; bottom:100%; left:0; color:var(--accent);}
+  .play-tempo input{flex:1; min-width:0; height:44px; margin:0; background:transparent;}
+  .play-tempo input::-webkit-slider-runnable-track{height:5px; background:var(--line); border-radius:3px;}
+  .play-tempo input::-webkit-slider-thumb{margin-top:-9.5px;}
+  .play-tempo input::-moz-range-track{height:5px; background:var(--line); border-radius:3px;}
   .pblock{font-size:11px; color:var(--faint); margin-top:4px; font-weight:500;}
   .flash{position:fixed; inset:0; background:var(--accent); opacity:0; pointer-events:none;}
 
@@ -478,10 +486,15 @@
   </div>
   <div class="pcells cells" id="pcells" aria-hidden="true"></div>
   <div class="beats" id="beats" aria-hidden="true"></div>
-  <div class="pbpm"><span id="pbpm">92</span> BPM<b id="prampMark"></b></div>
   <div class="pblock" id="pblock"></div>
 </div>
 
+<div class="stepper play-tempo" role="group" aria-label="Темп воспроизведения">
+  <label for="playBpmRange"><span id="pbpm">92</span> BPM<b id="prampMark" aria-hidden="true"></b></label>
+  <button id="playBpmMinus" type="button" aria-label="Уменьшить темп на 1 BPM">−</button>
+  <input id="playBpmRange" type="range" min="40" max="300" step="1" value="92" aria-label="Темп воспроизведения, ударов в минуту">
+  <button id="playBpmPlus" type="button" aria-label="Увеличить темп на 1 BPM">+</button>
+</div>
 <div class="footer">
   <button class="bigbtn ghost hidden" id="restart" type="button" aria-label="Начать партию заново">⟲ Заново</button>
   <button class="bigbtn" id="start" type="button">Старт</button>
@@ -1603,14 +1616,27 @@ $('gapMinus').onclick=()=>{ state.gap=Math.max(0,state.gap-1); save(); syncGap()
 $('gapPlus').onclick =()=>{ state.gap=Math.min(8,state.gap+1); save(); syncGap(); };
 
 /* ============ BPM ============ */
+function showPlaybackBpm(bpm){
+  $('pbpm').textContent=bpm;
+  $('playBpmRange').value=bpm;
+  $('playBpmMinus').disabled=bpm<=40;
+  $('playBpmPlus').disabled=bpm>=300;
+}
 function setBpm(v){
   state.bpm=clampInt(v, 40, 300, state.bpm);
   $('bpm').value=state.bpm; $('bpmNum').textContent=state.bpm;
-  // во время игры цифру на экране обновляет событие 'ramp' — в момент, когда новый
-  // темп слышно, а не когда он запланирован, иначе число опережало звук
-  if(!playing) $('pbpm').textContent=state.bpm;
+  if(playing){
+    playbackBpm=state.bpm;
+    // Разгон мог уже запланировать смену числа на экране для следующего круга.
+    uiQueue=uiQueue.filter(ev=>ev.kind!=='ramp');
+    $('prampMark').textContent='';
+  }
+  showPlaybackBpm(state.bpm);
   save();
 }
+$('playBpmRange').oninput=e=>setBpm(+e.target.value);
+$('playBpmMinus').onclick=()=>setBpm(+$('playBpmRange').value-1);
+$('playBpmPlus').onclick=()=>setBpm(+$('playBpmRange').value+1);
 $('bpm').oninput=e=>setBpm(+e.target.value);
 $('bpmMinus').onclick=()=>setBpm(state.bpm-1);
 $('bpmPlus').onclick=()=>setBpm(state.bpm+1);
@@ -1838,7 +1864,7 @@ function metClick(time, accent){
 
 /* ============ SCHEDULER ============ */
 let playing=false;
-let bpmBeforePlay=null;           // темп до разгона: стоп возвращает его на место
+let playbackBpm=null;             // разгон действует только на текущую игру
 let seq=[];                       // снимок партии на время игры
 let practiceSection=null;         // индекс раздела в режиме «тренировать раздел», иначе null
 let idx=0, s=0, passes=0;         // такт / щипок в такте / пройденных кругов
@@ -1849,7 +1875,7 @@ let stopRequested=false;
 let uiQueue=[];
 const SCHEDULE_AHEAD=0.1, LOOKAHEAD=25;
 
-const beatDur = () => 60/state.bpm;                 // доля = четверть
+const beatDur = () => 60/(playbackBpm ?? state.bpm); // доля = четверть
 const barDur  = () => BEATS_PER_BAR * beatDur();    // такт всегда 4/4
 /* Длительность щипка зависит от дробления текущего такта: при четырёх щипках это
    четверть, при восьми — восьмая. Поэтому шаг считается от такта, а не от доли. */
@@ -1912,9 +1938,10 @@ function armGap(){
 function rampTick(){
   const r=state.ramp;
   if(!r.on || passes % r.every !== 0) return;
-  const was=state.bpm;
-  setBpm(state.bpm + r.step);
-  if(state.bpm!==was) uiQueue.push({time:nextTime, kind:'ramp', bpm:state.bpm});
+  const nextBpm=Math.min(300, playbackBpm + r.step);
+  if(nextBpm===playbackBpm) return;
+  playbackBpm=nextBpm;
+  uiQueue.push({time:nextTime, kind:'ramp', bpm:nextBpm});
 }
 
 // пересинхронизация: выкинуть устаревшие визуальные события и заново привязать
@@ -1922,6 +1949,7 @@ function rampTick(){
 function resync(){
   const ending = stopRequested;
   uiQueue.length = 0;
+  showPlaybackBpm(playbackBpm);
   nextTime = ctx.currentTime + 0.08;
   // Если песня уже кончилась, в очереди лежало событие конца — и только оно вызывает
   // stopPlay(). Без этого уход во вкладку на последнем такте снова подвешивал экран
@@ -2041,7 +2069,7 @@ const practiceLabel = () => practiceSection!==null
 function renderEvent(ev){
   if(ev.kind==='end'){ stopPlay(); return; }
   if(ev.kind==='ramp'){
-    $('pbpm').textContent=ev.bpm;
+    showPlaybackBpm(ev.bpm);
     const m=$('prampMark'); m.textContent=' ↑';
     setTimeout(()=>{ m.textContent=''; }, 900);
     return;
@@ -2179,7 +2207,8 @@ function armFromStart(){
   $('pnext').textContent = practiceSection!==null ? practiceLabel()
                          : (seq[0].kind==='riff' ? 'рифф' : '');
   $('pblock').textContent=''; $('prampMark').textContent='';
-  $('pbpm').textContent=state.bpm;
+  playbackBpm=state.bpm;
+  showPlaybackBpm(playbackBpm);
   strnumEl.className='stringnum r'; strnumEl.textContent=''; litStrings([]);
   Array.from(beatsEl.children).forEach(x=>x.classList.remove('on'));
 }
@@ -2188,8 +2217,6 @@ function armFromStart(){
    пересобирается: правки в редакторе по-прежнему не достают до идущей игры. */
 function restartPlay(){
   if(!playing) return;
-  // разогнанный темп откатывается тоже, иначе «заново» шло бы с набранного
-  if(bpmBeforePlay!==null && state.bpm!==bpmBeforePlay) setBpm(bpmBeforePlay);
   armFromStart();
   // планировщик мог уже встать на конце песни, а кадр — быть в полёте
   clearTimeout(timerId); cancelAnimationFrame(rafId);
@@ -2220,7 +2247,6 @@ async function startPlay(practice){
   }
   prewarm(uniq, riffFreqs);
 
-  bpmBeforePlay = state.bpm;                    // разгон поднимет темп, стоп вернёт как было
   beatsEl.textContent=''; for(let i=0;i<BEATS_PER_BAR;i++) beatsEl.appendChild(document.createElement('i'));
   armFromStart();
 
@@ -2243,14 +2269,8 @@ function stopPlay(){
   const sb=$('start'); sb.textContent='▶ Старт'; sb.classList.remove('stop');
   $('restart').classList.add('hidden');
   keepAwake(false);
-  // Разгон менял state.bpm и писал его в хранилище, а исходный темп нигде не лежал:
-  // после долгой тренировки страница открывалась сразу на разогнанном.
-  if(bpmBeforePlay!==null && state.bpm!==bpmBeforePlay){
-    const was=state.bpm;
-    setBpm(bpmBeforePlay);
-    toast('Разогнались до ' + was + ' — темп вернулся на ' + bpmBeforePlay);
-  }
-  bpmBeforePlay=null;
+  if(playbackBpm!==state.bpm) toast('Разогнались до ' + playbackBpm + ' — темп вернулся на ' + state.bpm);
+  playbackBpm=null;
   updateStart();
 }
 $('start').onclick=()=>{ playing?stopPlay():startPlay(null); };
