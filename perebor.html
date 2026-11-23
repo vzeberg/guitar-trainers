@@ -69,7 +69,7 @@
     padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
     overflow:hidden; user-select:none; -webkit-user-select:none; -webkit-font-smoothing:antialiased;}
   :focus-visible{outline:2px solid var(--accent); outline-offset:2px; border-radius:4px;}
-  header, .screen, .footer{width:100%; max-width:var(--maxw);}
+  header, .screen, .play-tempo, .footer{width:100%; max-width:var(--maxw);}
   header{padding:16px 18px 8px;}
   .appbar{display:flex; align-items:center; gap:12px;}
   .logo{width:36px; height:36px; flex:0 0 auto; border-radius:calc(var(--card-radius) - 1px); border:1.5px solid var(--accent-line);
@@ -310,11 +310,12 @@
   .beats{display:flex; gap:12px; justify-content:center; margin:8px 0 4px;}
   .beats i{width:11px; height:11px; border-radius:50%; background:var(--line); transition:background .06s, box-shadow .06s;}
   .beats i.on{background:var(--accent); box-shadow:0 0 10px color-mix(in oklch, var(--accent) 70%, transparent);}
-  .play-tempo{flex:none; margin:0; padding:6px 16px; justify-content:center;}
+  .play-tempo{flex:none; margin:0; padding:6px 16px;}
   #play.hidden + .play-tempo{display:none;}
-  .play-tempo button{flex:none;}
+  .play-tempo button{flex:1 1 0; width:auto; min-width:0;}
   .play-tempo button:disabled{opacity:.4;}
-  .play-tempo output{position:relative; min-width:8ch; text-align:center; white-space:nowrap; font:700 14px var(--mono); color:var(--text);}
+  .play-tempo output{position:relative; flex:0 0 96px; text-align:center; white-space:nowrap; font:700 12px var(--mono); color:var(--muted);}
+  #pbpm{font-size:24px; color:var(--text);}
   .play-tempo output b{position:absolute; bottom:100%; left:0; color:var(--accent);}
   .pblock{font-size:11px; color:var(--faint); margin-top:4px; font-weight:500;}
   .flash{position:fixed; inset:0; background:var(--accent); opacity:0; pointer-events:none;}
