@@ -310,16 +310,12 @@
   .beats{display:flex; gap:12px; justify-content:center; margin:8px 0 4px;}
   .beats i{width:11px; height:11px; border-radius:50%; background:var(--line); transition:background .06s, box-shadow .06s;}
   .beats i.on{background:var(--accent); box-shadow:0 0 10px color-mix(in oklch, var(--accent) 70%, transparent);}
-  .play-tempo{flex:none; width:100%; max-width:400px; margin:0; padding:6px 16px; justify-content:center;}
+  .play-tempo{flex:none; margin:0; padding:6px 16px; justify-content:center;}
   #play.hidden + .play-tempo{display:none;}
   .play-tempo button{flex:none;}
   .play-tempo button:disabled{opacity:.4;}
-  .play-tempo label{position:relative; min-width:7ch; white-space:nowrap; font:700 14px var(--mono); color:var(--text);}
-  .play-tempo label b{position:absolute; bottom:100%; left:0; color:var(--accent);}
-  .play-tempo input{flex:1; min-width:0; height:44px; margin:0; background:transparent;}
-  .play-tempo input::-webkit-slider-runnable-track{height:5px; background:var(--line); border-radius:3px;}
-  .play-tempo input::-webkit-slider-thumb{margin-top:-9.5px;}
-  .play-tempo input::-moz-range-track{height:5px; background:var(--line); border-radius:3px;}
+  .play-tempo output{position:relative; min-width:8ch; text-align:center; white-space:nowrap; font:700 14px var(--mono); color:var(--text);}
+  .play-tempo output b{position:absolute; bottom:100%; left:0; color:var(--accent);}
   .pblock{font-size:11px; color:var(--faint); margin-top:4px; font-weight:500;}
   .flash{position:fixed; inset:0; background:var(--accent); opacity:0; pointer-events:none;}
 
@@ -490,10 +486,9 @@
 </div>
 
 <div class="stepper play-tempo" role="group" aria-label="Темп воспроизведения">
-  <label for="playBpmRange"><span id="pbpm">92</span> BPM<b id="prampMark" aria-hidden="true"></b></label>
-  <button id="playBpmMinus" type="button" aria-label="Уменьшить темп на 1 BPM">−</button>
-  <input id="playBpmRange" type="range" min="40" max="300" step="1" value="92" aria-label="Темп воспроизведения, ударов в минуту">
-  <button id="playBpmPlus" type="button" aria-label="Увеличить темп на 1 BPM">+</button>
+  <button id="playBpmMinus" type="button" aria-label="Уменьшить темп на 5 BPM">−</button>
+  <output aria-label="Текущий темп"><span id="pbpm">92</span> BPM<b id="prampMark" aria-hidden="true"></b></output>
+  <button id="playBpmPlus" type="button" aria-label="Увеличить темп на 5 BPM">+</button>
 </div>
 <div class="footer">
   <button class="bigbtn ghost hidden" id="restart" type="button" aria-label="Начать партию заново">⟲ Заново</button>
@@ -1618,7 +1613,6 @@ $('gapPlus').onclick =()=>{ state.gap=Math.min(8,state.gap+1); save(); syncGap()
 /* ============ BPM ============ */
 function showPlaybackBpm(bpm){
   $('pbpm').textContent=bpm;
-  $('playBpmRange').value=bpm;
   $('playBpmMinus').disabled=bpm<=40;
   $('playBpmPlus').disabled=bpm>=300;
 }
@@ -1634,9 +1628,9 @@ function setBpm(v){
   showPlaybackBpm(state.bpm);
   save();
 }
-$('playBpmRange').oninput=e=>setBpm(+e.target.value);
-$('playBpmMinus').onclick=()=>setBpm(+$('playBpmRange').value-1);
-$('playBpmPlus').onclick=()=>setBpm(+$('playBpmRange').value+1);
+// Берём показанный темп: разгон может уже запланировать новый BPM на следующий круг.
+$('playBpmMinus').onclick=()=>setBpm(Number($('pbpm').textContent)-5);
+$('playBpmPlus').onclick=()=>setBpm(Number($('pbpm').textContent)+5);
 $('bpm').oninput=e=>setBpm(+e.target.value);
 $('bpmMinus').onclick=()=>setBpm(state.bpm-1);
 $('bpmPlus').onclick=()=>setBpm(state.bpm+1);
