@@ -284,6 +284,12 @@
   .bigbtn:active{transform:translateY(1px);}
   .bigbtn.stop{background:transparent; color:var(--danger); border:1.5px solid color-mix(in oklch, var(--danger) 50%, transparent);}
   .bigbtn:disabled{opacity:.35;}
+  #restart, #start.stop{display:flex; align-items:center; justify-content:center; gap:6px;}
+  .restart-icon, #start.stop::before{display:block; flex:none; width:12px; height:12px;}
+  #start.stop::before{content:""; background:currentColor; border-radius:1px;}
+  .restart-icon{position:relative; border:2px solid currentColor; border-left-color:transparent; border-radius:50%;}
+  .restart-icon::after{content:""; position:absolute; top:-1px; left:-2px; box-sizing:border-box; width:5px; height:5px;
+    border-left:2px solid currentColor; border-bottom:2px solid currentColor;}
   #play{display:flex; flex-direction:column; align-items:center; justify-content:flex-start; text-align:center; padding-top:14px;}
   .phead{display:flex; align-items:flex-start; justify-content:center; gap:10px; min-height:190px;}
   .cu{display:flex; flex-direction:column; align-items:center; gap:10px; width:128px; flex:0 0 auto;}
@@ -492,7 +498,7 @@
   <button id="playBpmPlus" type="button" aria-label="Увеличить темп на 5 BPM">+</button>
 </div>
 <div class="footer">
-  <button class="bigbtn ghost hidden" id="restart" type="button" aria-label="Начать партию заново">⟲ Заново</button>
+  <button class="bigbtn ghost hidden" id="restart" type="button" aria-label="Начать партию заново"><span class="restart-icon" aria-hidden="true"></span>Заново</button>
   <button class="bigbtn" id="start" type="button">Старт</button>
 </div>
 
@@ -2247,7 +2253,7 @@ async function startPlay(practice){
 
   playing=true;
   $('setup').classList.add('hidden'); $('play').classList.remove('hidden');
-  const sb=$('start'); sb.textContent='■ Стоп'; sb.classList.add('stop'); sb.disabled=false;
+  const sb=$('start'); sb.textContent='Стоп'; sb.classList.add('stop'); sb.disabled=false;
   $('restart').classList.remove('hidden');
   keepAwake(true);
 
